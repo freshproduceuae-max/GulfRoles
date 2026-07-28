@@ -88,7 +88,7 @@ export default function LoginForm() {
                   value={formData.email}
                   onChange={handleChange}
                   disabled={isLoading}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-900"
                   placeholder="admin@jobbrowser.app"
                   required
                 />
@@ -106,8 +106,8 @@ export default function LoginForm() {
                   value={formData.password}
                   onChange={handleChange}
                   disabled={isLoading}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  placeholder="Enter your password"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-900"
+                  placeholder="admin@jobbrowser.app"
                   required
                 />
               </div>
@@ -115,7 +115,7 @@ export default function LoginForm() {
               {/* Error Message */}
               {error && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm text-red-800">{error}</p>
+                  <p className="text-sm text-red-600 font-medium">{error}</p>
                 </div>
               )}
 
