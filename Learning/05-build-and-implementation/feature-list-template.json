@@ -1,0 +1,39 @@
+{
+  "project": "Small Business Website",
+  "version": "1.0",
+  "generatedFrom": [
+    "docs/architecture/site-architecture.md",
+    "docs/brand/content-inventory.md",
+    "docs/assets/asset-inventory.md"
+  ],
+  "features": [
+    {
+      "id": "WEB-F001",
+      "category": "section",
+      "description": "Short feature or section name",
+      "order": 1,
+      "priority": "P0",
+      "dependsOn": [],
+      "ui": true,
+      "usesImages": ["hero-main"],
+      "steps": [
+        "Describe exact check 1 (e.g. hero image loads on live URL)",
+        "Describe exact check 2 (e.g. primary CTA opens WhatsApp)"
+      ],
+      "passes": false
+    }
+  ],
+  "allowedValues": {
+    "category": ["section", "navigation", "dialog", "form", "conversion", "seo", "performance", "accessibility", "polish"],
+    "priority": ["P0", "P1", "P2", "P3"],
+    "passes": [false, true]
+  },
+  "rules": [
+    "P0 means required before the site goes public.",
+    "P1 means required for a polished launch but not blocking.",
+    "P2 means important but deferrable.",
+    "P3 means nice-to-have or polish.",
+    "A feature that uses images must not pass until those image files exist, are committed, and load on the live URL.",
+    "passes must remain false until all steps are verified."
+  ]
+}
