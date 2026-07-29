@@ -8,6 +8,21 @@ export const metadata: Metadata = {
   keywords: ['jobs', 'careers', 'job search', 'employment'],
   authors: [{ name: 'JobBrowser Team' }],
   viewport: 'width=device-width, initial-scale=1',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-snippet': -1,
+      'max-image-preview': 'large',
+      'max-video-preview': -1,
+    },
+  },
+  canonical: 'https://jobbrowser.app',
+  alternates: {
+    canonical: 'https://jobbrowser.app',
+  },
   openGraph: {
     type: 'website',
     locale: 'en_US',

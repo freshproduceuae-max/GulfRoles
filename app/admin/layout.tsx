@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { ReactNode } from 'react';
 
 interface AdminLayoutProps {
@@ -5,6 +6,14 @@ interface AdminLayoutProps {
 }
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+  title: 'Admin Dashboard - JobBrowser',
+};
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
   return (
