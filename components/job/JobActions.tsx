@@ -7,9 +7,10 @@ import type { Job } from '@/lib/validation';
 interface JobActionsProps {
   job: Job;
   onApplyClick?: () => void;
+  affiliate?: 'careerjet' | 'jooble';
 }
 
-const JobActions: React.FC<JobActionsProps> = ({ job, onApplyClick }) => {
+const JobActions: React.FC<JobActionsProps> = ({ job, onApplyClick, affiliate = 'careerjet' }) => {
   const [isSaved, setIsSaved] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
 
@@ -76,6 +77,28 @@ const JobActions: React.FC<JobActionsProps> = ({ job, onApplyClick }) => {
     window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 
+  // Handle apply click - redirects through affiliate tracking
+  const handleApplyClick = async () => {
+    // Call the parent callback if provided
+    if (onApplyClick) {
+      onApplyClick();
+    }
+
+    // Track click and redirect to affiliate URL
+    try {
+      const affiliateUrl = `/api/affiliate/click?job=${job.id}&network=${affiliate}&title=${encodeURIComponent(
+        job.title
+      )}`;
+      window.location.href = affiliateUrl;
+    } catch (error) {
+      console.error('Failed to redirect to affiliate click tracker:', error);
+      // Fallback: just call the callback
+      if (onApplyClick) {
+        onApplyClick();
+      }
+    }
+  };
+
   return (
     <div className="flex flex-col gap-3">
       {/* Primary Actions */}
@@ -83,7 +106,7 @@ const JobActions: React.FC<JobActionsProps> = ({ job, onApplyClick }) => {
         <Button
           variant="primary"
           size="md"
-          onClick={onApplyClick}
+          onClick={handleApplyClick}
           className="flex-1"
           aria-label={`Apply for ${job.title} position`}
         >

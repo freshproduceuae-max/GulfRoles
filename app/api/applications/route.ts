@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { uploadResume } from '@/lib/storage';
+import { trackAffiliateClick } from '@/lib/affiliate';
 import { ApplicationCreateSchema } from '@/lib/validation';
 
 /**
@@ -202,6 +203,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     const applicationId = applicationResult.rows[0].id;
+
+    // Track affiliate click for analytics (non-blocking)
+    const userAgent = request.headers.get('user-agent') || undefined;
+    const referrer = request.headers.get('referer') || undefined;
+    const forwardedFor = request.headers.get('x-forwarded-for');
+    const ipAddress = forwardedFor ? forwardedFor.split(',')[0].trim() : undefined;
+
+    trackAffiliateClick(jobId, 'careerjet', validationData.applicant_email, userAgent, referrer, ipAddress).catch(
+      (error) => {
+        console.error('Failed to track affiliate click:', error);
+        // Don't fail the request if tracking fails
+      }
+    );
 
     // Send email notification to employer (placeholder - implement actual email sending)
     if (employerEmail) {
