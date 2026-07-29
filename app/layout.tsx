@@ -19,7 +19,6 @@ export const metadata: Metadata = {
       'max-video-preview': -1,
     },
   },
-  canonical: 'https://jobbrowser.app',
   alternates: {
     canonical: 'https://jobbrowser.app',
   },

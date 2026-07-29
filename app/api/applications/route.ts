@@ -210,7 +210,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const forwardedFor = request.headers.get('x-forwarded-for');
     const ipAddress = forwardedFor ? forwardedFor.split(',')[0].trim() : undefined;
 
-    trackAffiliateClick(jobId, 'careerjet', validationData.applicant_email, userAgent, referrer, ipAddress).catch(
+    trackAffiliateClick(jobId, 'careerjet', undefined, userAgent, referrer, ipAddress).catch(
       (error) => {
         console.error('Failed to track affiliate click:', error);
         // Don't fail the request if tracking fails

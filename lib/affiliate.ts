@@ -205,6 +205,9 @@ export async function getTotalAffiliateEarnings(since?: Date): Promise<number> {
  */
 export async function getAffiliatePerformanceReport(limit: number = 30) {
   try {
+    const limitDays = Math.min(Math.max(limit, 1), 365);
+    const cutoffDate = new Date(Date.now() - limitDays * 24 * 60 * 60 * 1000);
+
     const result = await query(
       `SELECT
         DATE(created_at) as date,
@@ -213,9 +216,10 @@ export async function getAffiliatePerformanceReport(limit: number = 30) {
         COUNT(DISTINCT user_id) as unique_users,
         COUNT(DISTINCT job_id) as jobs_clicked
       FROM affiliate_clicks
-      WHERE created_at >= NOW() - INTERVAL '${limit} days'
+      WHERE created_at >= $1
       GROUP BY DATE(created_at), affiliate
-      ORDER BY date DESC, affiliate`
+      ORDER BY date DESC, affiliate`,
+      [cutoffDate]
     );
 
     return result.rows;
