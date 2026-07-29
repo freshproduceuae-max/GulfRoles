@@ -6,7 +6,7 @@ import { query } from '@/lib/db';
  * Fetch a specific application
  */
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { id: string } }
 ): Promise<NextResponse> {
   try {

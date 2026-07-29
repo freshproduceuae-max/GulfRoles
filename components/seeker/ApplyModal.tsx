@@ -4,7 +4,6 @@ import { useState, FormEvent, ChangeEvent } from 'react';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
-import Toast from '@/components/ui/Toast';
 
 interface ApplyModalProps {
   jobId: string;

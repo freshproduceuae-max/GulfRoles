@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Button from '@/components/ui/Button';
-import Modal from '@/components/ui/Modal';
 import Loading from '@/components/ui/Loading';
 import ApplyModal from '@/components/seeker/ApplyModal';
 
@@ -260,7 +259,7 @@ export default function JobDetailsPage() {
                 Interested in this position?
               </h2>
               <p className="text-gray-600 dark:text-gray-400 mb-6">
-                Apply now and let the employer know why you're a great fit for this role.
+                Apply now and let the employer know why you&apos;re a great fit for this role.
               </p>
               <Button
                 variant="primary"
