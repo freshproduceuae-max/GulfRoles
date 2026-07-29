@@ -195,3 +195,5 @@ export default function SearchPage() {
     </div>
   );
 }
+
+export const dynamic = 'force-dynamic';
