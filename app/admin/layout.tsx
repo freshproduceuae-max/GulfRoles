@@ -4,6 +4,8 @@ interface AdminLayoutProps {
   children: ReactNode;
 }
 
+export const dynamic = 'force-dynamic';
+
 export default function AdminLayout({ children }: AdminLayoutProps) {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">

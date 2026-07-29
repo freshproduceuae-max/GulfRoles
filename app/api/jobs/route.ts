@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { searchJobs, type SearchFilters } from '@/lib/search';
+import { flagJob } from '@/lib/moderation';
+import { transaction } from '@/lib/db';
 
 /**
  * GET /api/jobs
@@ -160,6 +162,141 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json(
       {
         error: 'Failed to search jobs',
+        details: errorMessage,
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * POST /api/jobs
+ * Create a new job posting with moderation flagging
+ *
+ * Request Body:
+ * {
+ *   title: string,
+ *   description: string,
+ *   company_name: string,
+ *   location: string,
+ *   region: string,
+ *   job_type: string,
+ *   employer_email: string,
+ *   salary_min?: number,
+ *   salary_max?: number,
+ *   salary_currency?: string,
+ *   source_url?: string,
+ *   benefits?: object,
+ *   ...
+ * }
+ *
+ * Response:
+ * {
+ *   success: true,
+ *   job_id: string,
+ *   status: "published" | "flagged",
+ *   flag?: { rule: string, reason: string, confidence: number }
+ * }
+ */
+export async function POST(request: NextRequest): Promise<NextResponse> {
+  try {
+    const body = await request.json();
+
+    // Validate required fields
+    const required = ['title', 'description', 'company_name', 'location', 'region', 'job_type', 'employer_email'];
+    for (const field of required) {
+      if (!body[field]) {
+        return NextResponse.json(
+          { error: `Missing required field: ${field}` },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Create job and handle moderation in transaction
+    const result = await transaction(async (client) => {
+      // Insert job - initially as draft
+      const jobResult = await client.query(
+        `INSERT INTO jobs (
+          title, description, company_name, location, region, job_type,
+          employer_email, salary_min, salary_max, salary_currency,
+          source_url, benefits, status, posted_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
+        RETURNING id`,
+        [
+          body.title,
+          body.description,
+          body.company_name,
+          body.location,
+          body.region,
+          body.job_type,
+          body.employer_email,
+          body.salary_min || null,
+          body.salary_max || null,
+          body.salary_currency || 'USD',
+          body.source_url || null,
+          body.benefits ? JSON.stringify(body.benefits) : null,
+          'draft', // Initial status
+        ]
+      );
+
+      const jobId = jobResult.rows[0].id;
+
+      // Check for moderation flags
+      const flag = await flagJob({
+        title: body.title,
+        description: body.description,
+        company_name: body.company_name,
+        employer_verified: body.employer_verified || false,
+        employer_email: body.employer_email,
+        source_url: body.source_url,
+      });
+
+      let finalStatus = 'published';
+      let flagData = null;
+
+      if (flag) {
+        // Job is flagged - set status to flagged and create flag record
+        finalStatus = 'flagged';
+        flagData = {
+          rule: flag.rule,
+          reason: flag.reason,
+          confidence: flag.confidence,
+        };
+
+        // Create moderation flag record
+        await client.query(
+          `INSERT INTO moderation_flags (job_id, rule_triggered, confidence, status)
+           VALUES ($1, $2, $3, $4)`,
+          [jobId, flag.rule, flag.confidence, 'flagged']
+        );
+      }
+
+      // Update job status
+      await client.query(
+        `UPDATE jobs SET status = $1, updated_at = NOW() WHERE id = $2`,
+        [finalStatus, jobId]
+      );
+
+      return { jobId, status: finalStatus, flag: flagData };
+    });
+
+    return NextResponse.json(
+      {
+        success: true,
+        job_id: result.jobId,
+        status: result.status,
+        ...(result.flag && { flag: result.flag }),
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error('Job creation error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    return NextResponse.json(
+      {
+        error: 'Failed to create job',
         details: errorMessage,
       },
       { status: 500 }

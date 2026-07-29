@@ -57,3 +57,31 @@ export const JobSearchFiltersSchema = z.object({
 });
 
 export type JobSearchFilters = z.infer<typeof JobSearchFiltersSchema>;
+
+// Application schema for job applications
+export const ApplicationSchema = z.object({
+  id: z.string().uuid(),
+  job_id: z.string().uuid(),
+  applicant_name: z.string().min(1, 'Name is required').max(255),
+  applicant_email: z.string().email('Invalid email address'),
+  applicant_phone: z.string().max(20).nullable(),
+  resume_url: z.string().url().nullable(),
+  resume_filename: z.string().max(255).nullable(),
+  cover_letter: z.string().nullable(),
+  status: z.enum(['submitted', 'viewed', 'shortlisted', 'rejected', 'hired']).default('submitted'),
+  created_at: z.date(),
+  updated_at: z.date(),
+});
+
+export type Application = z.infer<typeof ApplicationSchema>;
+
+// Schema for creating a new application
+export const ApplicationCreateSchema = z.object({
+  job_id: z.string().uuid('Invalid job ID'),
+  applicant_name: z.string().min(1, 'Name is required').max(255),
+  applicant_email: z.string().email('Invalid email address'),
+  applicant_phone: z.string().max(20).optional(),
+  cover_letter: z.string().optional(),
+});
+
+export type ApplicationCreate = z.infer<typeof ApplicationCreateSchema>;

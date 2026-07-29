@@ -2,11 +2,9 @@
 
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import Button from '@/components/ui/Button';
-import Card from '@/components/ui/Card';
-import Badge from '@/components/ui/Badge';
-import Input from '@/components/ui/Input';
 import Link from 'next/link';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
 
 export default function Homepage() {
   const router = useRouter();
@@ -24,31 +22,6 @@ export default function Homepage() {
 
     router.push(`/search?${params.toString()}`);
   };
-
-  const sampleJobs = [
-    {
-      id: '1',
-      title: 'Senior React Developer',
-      company_name: 'TechCorp',
-      location: 'Dubai, UAE',
-      salary_min: 8000,
-      salary_max: 12000,
-      salary_currency: 'AED',
-      job_type: 'full-time',
-      region: 'UAE',
-    },
-    {
-      id: '2',
-      title: 'Product Manager',
-      company_name: 'InnovateTech',
-      location: 'Riyadh, Saudi Arabia',
-      salary_min: 150000,
-      salary_max: 200000,
-      salary_currency: 'SAR',
-      job_type: 'full-time',
-      region: 'Saudi',
-    },
-  ];
 
   return (
     <div className="bg-white dark:bg-gray-950">
