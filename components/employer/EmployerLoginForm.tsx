@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, FormEvent, ChangeEvent } from 'react';
-import { useRouter } from 'next/navigation';
 
 interface FormData {
   company_email: string;
@@ -9,7 +8,6 @@ interface FormData {
 }
 
 export default function EmployerLoginForm() {
-  const router = useRouter();
   const [formData, setFormData] = useState<FormData>({
     company_email: '',
     company_name: '',

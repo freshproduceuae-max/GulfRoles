@@ -33,7 +33,6 @@ export async function GET(
     }
 
     const companyId = company.rows[0].id;
-    const companyName = company.rows[0].name;
 
     // Mark company as verified
     await query(
