@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "seed": "tsx db/seed.ts"
+    "seed": "tsx db/seed.ts",
+    "seed:production": "NODE_ENV=production tsx db/seed-production.ts"
   },
   "dependencies": {
     "@sentry/nextjs": "^7.100.0",
