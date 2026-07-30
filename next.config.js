@@ -85,9 +85,18 @@ const nextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, {
+// Only apply Sentry config if auth token is available
+const sentryConfig = {
   org: process.env.SENTRY_ORG || 'jobbrowser',
   project: process.env.SENTRY_PROJECT || 'jobbrowser',
   authToken: process.env.SENTRY_AUTH_TOKEN,
   silent: true,
-});
+  skipSourceMapUpload: true,
+  releaseHealthSamples: {
+    sessionSampleRate: 0.1,
+  },
+};
+
+export default process.env.SENTRY_AUTH_TOKEN
+  ? withSentryConfig(nextConfig, sentryConfig)
+  : nextConfig;
