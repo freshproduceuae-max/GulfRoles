@@ -91,12 +91,12 @@ The “1,000 indexed jobs” launch target is this step. The code cannot meet it
 4. Sign in at `/admin/login` with `ADMIN_EMAIL` and `ADMIN_PASSWORD`. The moderation queue is `/admin/moderation`.
 5. Post a job once, end to end: `/employer/login`, open the email link, finish the 3 steps, then apply as a seeker and open `/employer/inbox/<job id>`. Resumes are stored in Postgres and are not public files.
 
-The two Vercel cron jobs, which is the free-tier maximum, and both run once a day:
+Add these two Cron Jobs in the Vercel project (Settings → Cron Jobs). They are not in `vercel.json`. A schedule in that file is rejected on a deploy whose git author is not a member of the Vercel team, which fails the deployment before the build starts. Hobby schedules can run at most once per day.
 
 - `0 5 * * *` → `/api/cron/daily` ingests one keyword/region slot and expires jobs that were not seen for 30 days, or whose `expires_at` has passed.
 - `0 16 * * *` → `/api/cron/send-alerts` sends the weekly digest only to people whose last email was at least 7 days ago.
 
-Both return 401 until `CRON_SECRET` is set. Vercel adds the bearer header for you when that variable exists.
+Both routes return 401 until `CRON_SECRET` is set. Vercel adds the bearer header for you when that variable exists.
 
 ## 6. Put your name on the legal pages
 
