@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import AlertSignup from '@/components/seeker/AlertSignup';
 
 export interface FooterProps extends React.HTMLAttributes<HTMLElement> {
   showSocial?: boolean;
@@ -15,7 +16,12 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
     const footerLinks = {
       product: [
         { label: 'Find Jobs', href: '/' },
-        { label: 'Post a Job', href: '/post-job' },
+        { label: 'Jobs in the UAE', href: '/ae' },
+        { label: 'Jobs in Saudi Arabia', href: '/sa' },
+        { label: 'Jobs in India', href: '/in' },
+        { label: 'Jobs in Australia', href: '/au' },
+        { label: 'Jobs in the US', href: '/us' },
+        { label: 'Post a Job', href: '/employer/post-job' },
         { label: 'Salary Guide', href: '/salary-guide' },
       ],
       company: [
@@ -241,22 +247,7 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
                   Get the latest job listings and career tips delivered to your inbox.
                 </p>
               </div>
-              <form className="w-full sm:w-auto flex gap-2">
-                <input
-                  type="email"
-                  placeholder="Your email"
-                  className="flex-1 sm:flex-none px-4 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 placeholder-gray-500 dark:placeholder-gray-400"
-                  aria-label="Email for newsletter"
-                  required
-                />
-                <button
-                  type="submit"
-                  className="px-6 py-2 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-lg text-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-gray-900"
-                  aria-label="Subscribe to newsletter"
-                >
-                  Subscribe
-                </button>
-              </form>
+              <AlertSignup compact />
             </div>
           </div>
         </div>

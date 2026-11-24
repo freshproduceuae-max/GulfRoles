@@ -1,88 +1,68 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { query, queryOne } from '@/lib/db';
+import { canAccessJob } from '@/lib/access';
+import { serverErrorResponse } from '@/lib/http';
 
-/**
- * GET /api/applications/[id]
- * Fetch a specific application
- */
+const APPLICATION_COLUMNS = `
+  id, job_id, applicant_name, applicant_email, applicant_phone,
+  resume_url, resume_filename, cover_letter, status, created_at, updated_at
+`;
+
+async function authorize(request: NextRequest, applicationId: string): Promise<
+  | { ok: true; jobId: string }
+  | { ok: false; response: NextResponse }
+> {
+  const row = await queryOne<{ job_id: string }>('SELECT job_id FROM applications WHERE id = $1', [applicationId]);
+  if (!row) {
+    return { ok: false, response: NextResponse.json({ error: 'Application not found' }, { status: 404 }) };
+  }
+  if (!(await canAccessJob(request, row.job_id))) {
+    return { ok: false, response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
+  }
+  return { ok: true, jobId: row.job_id };
+}
+
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ): Promise<NextResponse> {
   try {
-    const applicationId = params.id;
+    const access = await authorize(request, params.id);
+    if (!access.ok) return access.response;
 
-    const result = await query(
-      `SELECT * FROM applications WHERE id = $1`,
-      [applicationId]
-    );
-
-    if (result.rows.length === 0) {
-      return NextResponse.json(
-        { error: 'Application not found' },
-        { status: 404 }
-      );
-    }
-
+    const result = await query(`SELECT ${APPLICATION_COLUMNS} FROM applications WHERE id = $1`, [params.id]);
     return NextResponse.json({ application: result.rows[0] });
   } catch (error) {
-    console.error('Error fetching application:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch application' },
-      { status: 500 }
-    );
+    return serverErrorResponse(error, 'Failed to fetch application');
   }
 }
 
-/**
- * PATCH /api/applications/[id]
- * Update application status
- *
- * Request body:
- * {
- *   status: 'submitted' | 'viewed' | 'shortlisted' | 'rejected' | 'hired'
- * }
- */
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ): Promise<NextResponse> {
   try {
-    const applicationId = params.id;
+    const access = await authorize(request, params.id);
+    if (!access.ok) return access.response;
+
     const body = await request.json();
     const { status } = body;
-
-    // Validate status
     const validStatuses = ['submitted', 'viewed', 'shortlisted', 'rejected', 'hired'];
     if (!validStatuses.includes(status)) {
-      return NextResponse.json(
-        { error: 'Invalid status' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
     }
 
     const result = await query(
       `UPDATE applications
        SET status = $1, updated_at = NOW()
        WHERE id = $2
-       RETURNING *`,
-      [status, applicationId]
+       RETURNING ${APPLICATION_COLUMNS}`,
+      [status, params.id]
     );
-
-    if (result.rows.length === 0) {
-      return NextResponse.json(
-        { error: 'Application not found' },
-        { status: 404 }
-      );
-    }
 
     return NextResponse.json({ application: result.rows[0] });
   } catch (error) {
-    console.error('Error updating application:', error);
-    return NextResponse.json(
-      { error: 'Failed to update application' },
-      { status: 500 }
-    );
+    return serverErrorResponse(error, 'Failed to update application');
   }
 }
 

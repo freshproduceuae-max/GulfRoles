@@ -1,69 +1,61 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { trackAffiliateClick, generateAffiliateUrl, AFFILIATE_CONFIG, AffiliateNetwork } from '@/lib/affiliate';
+import {
+  trackAffiliateClick,
+  generateAffiliateUrl,
+  isAffiliateSource,
+  type AffiliateNetwork,
+} from '@/lib/affiliate';
+import { queryOne } from '@/lib/db';
+import { serverErrorResponse } from '@/lib/http';
 
 /**
- * POST /api/affiliate/click
- * Track affiliate click and redirect to affiliate URL
- *
- * Query Parameters:
- * - job: string (required) - Job ID to track
- * - network: string (optional, default: 'careerjet') - Affiliate network
- * - title: string (optional) - Job title for search
+ * GET /api/affiliate/click?job=<id>
+ * Records the click and sends the seeker to the partner listing.
+ * Direct employer jobs stay on JobBrowser.
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const jobId = searchParams.get('job');
-    const network = (searchParams.get('network') || 'careerjet') as AffiliateNetwork;
-    const jobTitle = searchParams.get('title') || undefined;
-
-    // Validate job ID
+    const jobId = request.nextUrl.searchParams.get('job');
     if (!jobId) {
-      return NextResponse.json(
-        { error: 'Job ID is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Job ID is required' }, { status: 400 });
     }
 
-    // Validate affiliate network
-    if (!AFFILIATE_CONFIG[network]) {
-      return NextResponse.json(
-        { error: `Invalid affiliate network: ${network}` },
-        { status: 400 }
-      );
+    const job = await queryOne<{
+      id: string;
+      title: string;
+      source: string;
+      source_url: string | null;
+    }>('SELECT id, title, source, source_url FROM jobs WHERE id = $1 AND deleted_at IS NULL', [jobId]);
+
+    if (!job) {
+      return NextResponse.json({ error: 'Job not found' }, { status: 404 });
     }
 
-    // Extract tracking information from request
+    if (!isAffiliateSource(job.source)) {
+      return NextResponse.redirect(new URL(`/jobs/${job.id}`, request.url));
+    }
+
+    const network = job.source as AffiliateNetwork;
     const userAgent = request.headers.get('user-agent') || undefined;
     const referrer = request.headers.get('referer') || undefined;
     const forwardedFor = request.headers.get('x-forwarded-for');
     const ipAddress = forwardedFor ? forwardedFor.split(',')[0].trim() : undefined;
 
-    // Track the click asynchronously (don't wait for it)
-    trackAffiliateClick(jobId, network, undefined, userAgent, referrer, ipAddress).catch(
-      (error) => {
-        console.error('Error tracking affiliate click:', error);
-      }
-    );
+    await trackAffiliateClick(jobId, network, undefined, userAgent, referrer, ipAddress).catch((error) => {
+      console.error('Error tracking affiliate click:', error);
+    });
 
-    // Generate the affiliate URL
-    const affiliateUrl = generateAffiliateUrl(jobId, network, jobTitle);
-
+    const affiliateUrl = job.source_url || generateAffiliateUrl(jobId, network, job.title);
     if (!affiliateUrl) {
       return NextResponse.json(
-        { error: `Affiliate network ${network} is not configured` },
+        { error: `${network} apply link is not available yet` },
         { status: 503 }
       );
     }
 
-    // Redirect to affiliate URL
     return NextResponse.redirect(affiliateUrl, { status: 302 });
   } catch (error) {
-    console.error('Affiliate click handler error:', error);
-    return NextResponse.json(
-      { error: 'Failed to process affiliate click' },
-      { status: 500 }
-    );
+    return serverErrorResponse(error, 'Failed to process affiliate click');
   }
 }
 

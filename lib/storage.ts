@@ -7,6 +7,34 @@ import fs from 'fs/promises';
 import path from 'path';
 
 const STORAGE_DIR = path.join(process.cwd(), 'public', 'uploads', 'resumes');
+const MAX_RESUME_BYTES = 4 * 1024 * 1024;
+
+const CONTENT_TYPES: Record<string, string> = {
+  '.pdf': 'application/pdf',
+  '.doc': 'application/msword',
+  '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  '.txt': 'text/plain',
+};
+
+/**
+ * Validate a resume before it is stored in Postgres.
+ * Vercel functions cannot keep files on the local disk, and public URLs would expose CVs.
+ */
+export function validateResume(
+  file: Buffer,
+  originalFilename: string
+): { filename: string; contentType: string } {
+  if (file.length > MAX_RESUME_BYTES) {
+    throw new Error('File size exceeds 4MB limit');
+  }
+  const ext = path.extname(originalFilename).toLowerCase();
+  const contentType = CONTENT_TYPES[ext];
+  if (!contentType) {
+    throw new Error('Only PDF, DOC, DOCX, and TXT files are allowed');
+  }
+  const filename = path.basename(originalFilename).replace(/[^\w.\-]+/g, '_').slice(0, 200);
+  return { filename: filename || `resume${ext}`, contentType };
+}
 
 /**
  * Ensure storage directory exists
@@ -47,8 +75,8 @@ export async function uploadResume(
 
     // Validate file size (max 5MB)
     const buffer = typeof file === 'string' ? Buffer.from(file, 'base64') : file;
-    if (buffer.length > 5 * 1024 * 1024) {
-      throw new Error('File size exceeds 5MB limit');
+    if (buffer.length > MAX_RESUME_BYTES) {
+      throw new Error('File size exceeds 4MB limit');
     }
 
     // Validate file type

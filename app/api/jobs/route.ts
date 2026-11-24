@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { searchJobs, type SearchFilters } from '@/lib/search';
 import { flagJob } from '@/lib/moderation';
 import { transaction } from '@/lib/db';
+import { regionFromParam } from '@/lib/regions';
+import { serverErrorResponse } from '@/lib/http';
+import { getEmployerSession } from '@/lib/access';
+import { toUsd } from '@/lib/ingestion/normalize';
 
 /**
  * GET /api/jobs
@@ -48,14 +52,18 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     // Region filter
     const region = searchParams.get('region');
     if (region) {
-      const validRegions = ['UAE', 'Saudi', 'India', 'Australia', 'USA'];
-      if (!validRegions.includes(region)) {
+      const resolved = regionFromParam(region);
+      if (!resolved) {
         return NextResponse.json(
-          { error: 'Invalid region. Must be one of: UAE, Saudi, India, Australia, USA' },
+          { error: 'Invalid region. Use ae, sa, in, au, us or UAE, Saudi, India, Australia, USA' },
           { status: 400 }
         );
       }
-      filters.region = region;
+      filters.region = resolved.db;
+    }
+
+    if (searchParams.get('featured') === 'true') {
+      filters.featured = true;
     }
 
     // Job type filter
@@ -156,16 +164,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     // Return results
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
-    console.error('Search error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
-    return NextResponse.json(
-      {
-        error: 'Failed to search jobs',
-        details: errorMessage,
-      },
-      { status: 500 }
-    );
+    return serverErrorResponse(error, 'Failed to search jobs');
   }
 }
 
@@ -200,10 +199,17 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
+    const session = await getEmployerSession(request);
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Sign in with the email link before posting a job.' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
 
-    // Validate required fields
-    const required = ['title', 'description', 'company_name', 'location', 'region', 'job_type', 'employer_email'];
+    const required = ['title', 'description', 'company_name', 'location', 'region', 'job_type'];
     for (const field of required) {
       if (!body[field]) {
         return NextResponse.json(
@@ -213,30 +219,47 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     }
 
+    const region = regionFromParam(String(body.region));
+    if (!region) {
+      return NextResponse.json(
+        { error: 'Invalid region. Use UAE, Saudi, India, Australia, or USA' },
+        { status: 400 }
+      );
+    }
+
+    const salaryMin = body.salary_min ? Number(body.salary_min) : null;
+    const salaryMax = body.salary_max ? Number(body.salary_max) : null;
+    const salaryCurrency = body.salary_currency || region.currency;
+
     // Create job and handle moderation in transaction
     const result = await transaction(async (client) => {
-      // Insert job - initially as draft
       const jobResult = await client.query(
         `INSERT INTO jobs (
-          title, description, company_name, location, region, job_type,
-          employer_email, salary_min, salary_max, salary_currency,
-          source_url, benefits, status, posted_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
+          title, description, company_id, company_name, location, region, job_type,
+          employer_email, employer_verified, salary_min, salary_max, salary_currency,
+          salary_normalized_usd, source, source_url, benefits, status, posted_at, expires_at
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7,
+          $8, $9, $10, $11, $12,
+          $13, 'direct', $14, $15, 'draft', NOW(), NOW() + INTERVAL '30 days'
+        )
         RETURNING id`,
         [
           body.title,
           body.description,
+          session.companyId,
           body.company_name,
           body.location,
-          body.region,
+          region.db,
           body.job_type,
-          body.employer_email,
-          body.salary_min || null,
-          body.salary_max || null,
-          body.salary_currency || 'USD',
+          session.email,
+          session.verified,
+          salaryMin,
+          salaryMax,
+          salaryCurrency,
+          toUsd(salaryMin, salaryMax, salaryCurrency, null),
           body.source_url || null,
           body.benefits ? JSON.stringify(body.benefits) : null,
-          'draft', // Initial status
         ]
       );
 
@@ -247,8 +270,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         title: body.title,
         description: body.description,
         company_name: body.company_name,
-        employer_verified: body.employer_verified || false,
-        employer_email: body.employer_email,
+        employer_verified: session.verified,
+        employer_email: session.email,
         source_url: body.source_url,
       });
 
@@ -291,16 +314,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       { status: 201 }
     );
   } catch (error) {
-    console.error('Job creation error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
-    return NextResponse.json(
-      {
-        error: 'Failed to create job',
-        details: errorMessage,
-      },
-      { status: 500 }
-    );
+    return serverErrorResponse(error, 'Failed to create job');
   }
 }
 

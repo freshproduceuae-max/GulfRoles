@@ -1,7 +1,9 @@
 # Quick Deploy Checklist - jobbrowser.app
 
+**Superseded for launch steps by [LAUNCH.md](../LAUNCH.md).** This file is the July 2026 checklist and still assumes a localhost database and unused OAuth keys. Follow LAUNCH.md.
+
 **Estimated Time:** 4-6 hours from start to live  
-**Current Status:** ✅ READY
+**Current Status:** Code is ready. Production still needs the database, env vars, and domain steps in LAUNCH.md.
 
 ---
 

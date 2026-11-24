@@ -1,6 +1,15 @@
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
+import { timingSafeEqual } from 'crypto';
+import { queryOne } from './db';
+
+function passwordsMatch(supplied: string, expected: string): boolean {
+  const left = Buffer.from(supplied);
+  const right = Buffer.from(expected);
+  if (left.length !== right.length) return false;
+  return timingSafeEqual(left, right);
+}
 
 declare module 'next-auth' {
   interface User {
@@ -25,48 +34,53 @@ declare module 'next-auth/jwt' {
   }
 }
 
-// Hardcoded admin user for MVP
-// In production, this should be fetched from a database
-const ADMIN_USER = {
-  id: '1',
-  email: 'admin@jobbrowser.app',
-  password: '$2a$10$N9qo8uLOickgx2ZMRZoMy.EjjUbHKxcfgxjzhEqTNB.1Wd8M.bNVm', // 'password' hashed with bcrypt
-};
-
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
-        email: { label: 'Email', type: 'email', placeholder: 'admin@jobbrowser.app' },
+        email: { label: 'Email', type: 'email', placeholder: 'Admin email' },
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+        const email = credentials?.email?.trim().toLowerCase();
+        const password = credentials?.password;
+        if (!email || !password) {
           throw new Error('Invalid credentials');
         }
 
-        // Find user (in MVP, we check against hardcoded user)
-        if (credentials.email !== ADMIN_USER.email) {
-          throw new Error('Invalid credentials');
+        const envEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+        const envPassword = process.env.ADMIN_PASSWORD;
+        const envHash = process.env.ADMIN_PASSWORD_HASH;
+        if (envEmail && email === envEmail) {
+          if (envHash && (await bcrypt.compare(password, envHash))) {
+            return { id: 'env-admin', email, name: 'Admin', role: 'admin' };
+          }
+          if (envPassword && passwordsMatch(password, envPassword)) {
+            return { id: 'env-admin', email, name: 'Admin', role: 'admin' };
+          }
         }
 
-        // Verify password
-        const passwordMatch = await bcrypt.compare(
-          credentials.password,
-          ADMIN_USER.password
-        );
-
-        if (!passwordMatch) {
-          throw new Error('Invalid credentials');
+        if (process.env.DATABASE_URL) {
+          try {
+            const row = await queryOne<{
+              id: string;
+              email: string;
+              password_hash: string;
+              role: string;
+            }>(
+              'SELECT id, email, password_hash, role FROM admin_users WHERE LOWER(email) = $1',
+              [email]
+            );
+            if (row && (await bcrypt.compare(password, row.password_hash))) {
+              return { id: row.id, email: row.email, name: 'Admin', role: row.role || 'admin' };
+            }
+          } catch (error) {
+            console.error('Admin lookup failed', error instanceof Error ? error.message : error);
+          }
         }
 
-        return {
-          id: ADMIN_USER.id,
-          email: ADMIN_USER.email,
-          name: 'Admin User',
-          role: 'admin',
-        };
+        throw new Error('Invalid credentials');
       },
     }),
   ],

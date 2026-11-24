@@ -2,6 +2,8 @@
 
 A modern web application for browsing and aggregating job listings from multiple sources.
 
+Launch steps for the owner (database, Vercel env, affiliate keys, domain) are in [LAUNCH.md](LAUNCH.md).
+
 ## Tech Stack
 
 - **Framework**: Next.js 14 (App Router)

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { reviewFlaggedJob } from '@/lib/moderation';
 import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 
 /**
  * POST /api/moderation/review
@@ -23,7 +24,7 @@ import { getServerSession } from 'next-auth/next';
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     // Check authentication
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json(
         { error: 'Unauthorized' },

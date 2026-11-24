@@ -336,7 +336,7 @@ const seedJobs: SeedJob[] = [
  */
 async function seed() {
   try {
-    console.log('Starting database seed with test jobs...');
+    console.log('Starting database seed with labeled test jobs. Do not point this at the public database.');
     console.log(`Preparing to insert ${seedJobs.length} test jobs...\n`);
 
     const expiresAt = addDays(new Date(), 30);

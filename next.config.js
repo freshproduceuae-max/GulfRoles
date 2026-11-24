@@ -9,7 +9,14 @@ const nextConfig = {
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
   redirects: async () => {
-    return [];
+    return [
+      { source: '/post-job', destination: '/employer/post-job', permanent: false },
+      { source: '/login', destination: '/employer/login', permanent: false },
+      { source: '/employer', destination: '/employer/login', permanent: false },
+      { source: '/inbox/:jobId', destination: '/employer/inbox/:jobId', permanent: false },
+      { source: '/verify/:token', destination: '/employer/verify/:token', permanent: false },
+      { source: '/moderation', destination: '/admin/moderation', permanent: false },
+    ];
   },
   rewrites: async () => {
     return [];
@@ -21,7 +28,7 @@ const nextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, s-maxage=604800, stale-while-revalidate=86400',
+            value: 'public, s-maxage=60, stale-while-revalidate=300',
           },
           {
             key: 'X-Content-Type-Options',

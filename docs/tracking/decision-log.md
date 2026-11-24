@@ -139,3 +139,45 @@
 ## Tracking
 
 Additional decisions will be logged as they emerge across remaining phases (Phase 02–08).
+
+---
+
+## 2026-11-24 — MVP implementation choices
+
+These were made while finishing the code against the locked MVP. They do not change the product decisions above.
+
+### Database
+
+**Choice:** Any hosted Postgres behind `DATABASE_URL` (Neon, Vercel Postgres, or Supabase). SSL is turned on unless the host is localhost.
+
+**Rationale:** The free Vercel project does not include a database. The July deployment pointed at `127.0.0.1:5432`.
+
+### Admin sign-in
+
+**Choice:** `ADMIN_EMAIL` plus `ADMIN_PASSWORD` or `ADMIN_PASSWORD_HASH`. A matching row in `admin_users` also works. The hardcoded password hash was removed.
+
+**Rationale:** A password in the repository is public.
+
+### Crons
+
+**Choice:** Two daily cron jobs, which is the Vercel free-tier cap. `/api/cron/daily` ingests one keyword in one region and expires stale jobs. `/api/cron/send-alerts` runs daily but emails a subscriber only after 7 days.
+
+**Rationale:** Hobby cron expressions must be once a day. A weekly expression is rejected. More than two jobs is rejected.
+
+### Resumes
+
+**Choice:** Resume bytes live in Postgres and are downloaded by the signed-in employer. They are not written under `public/`.
+
+**Rationale:** Vercel’s disk is ephemeral, and a public uploads folder would expose CVs. CV resale stays forbidden.
+
+### Ads and featured jobs
+
+**Choice:** AdSense markup renders only when the publisher id and slot ids are set. `listing_tier = featured` can be set by an admin API. No payment provider.
+
+**Rationale:** Matches the three-tier plan: affiliate clicks now, AdSense after traffic, paid placement after that.
+
+### Regions Adzuna cannot serve
+
+**Choice:** Adzuna is requested for India, Australia, and the US only. UAE and Saudi listings come from Careerjet, Jooble, and employer posts.
+
+**Rationale:** Adzuna does not publish UAE or Saudi feeds. Pretending otherwise would store nothing and look like a bug.

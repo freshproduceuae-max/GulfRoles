@@ -21,6 +21,7 @@ interface JobCardProps {
   employer_verified?: boolean;
   status?: string;
   application_count?: number;
+  featured?: boolean;
   onApplyClick?: () => void;
 }
 
@@ -40,6 +41,7 @@ const JobCard: React.FC<JobCardProps> = ({
   employer_verified: propsVerified,
   status: propsStatus,
   application_count: propsApplicationCount,
+  featured = false,
   onApplyClick,
 }) => {
   // Merge job object and individual props (props take precedence)
@@ -125,6 +127,7 @@ const JobCard: React.FC<JobCardProps> = ({
             {/* Title and Company */}
             <div className="flex-1 min-w-0">
               <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                {featured && <span className="mr-2 text-xs font-medium text-amber-700">Featured</span>}
                 {jobData.title}
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
@@ -204,16 +207,21 @@ const JobCard: React.FC<JobCardProps> = ({
 
       {/* Actions - Not clickable to navigate */}
       <div className="px-4 sm:px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
-        <button
-          onClick={onApplyClick}
-          className="
-            w-full px-4 py-2 rounded-lg font-medium
-            bg-primary-500 text-white hover:bg-primary-600
-            transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500
-          "
-        >
-          Apply Now
-        </button>
+        {onApplyClick ? (
+          <button
+            onClick={onApplyClick}
+            className="w-full px-4 py-2 rounded-lg font-medium bg-primary-500 text-white hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+          >
+            Apply Now
+          </button>
+        ) : (
+          <Link
+            href={`/jobs/${jobData.id}`}
+            className="block w-full px-4 py-2 rounded-lg font-medium text-center bg-primary-500 text-white hover:bg-primary-600"
+          >
+            View job
+          </Link>
+        )}
       </div>
     </article>
   );

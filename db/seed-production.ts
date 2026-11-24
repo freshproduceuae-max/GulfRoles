@@ -209,12 +209,12 @@ const testJobs: TestJob[] = [
 const testAdmins: TestAdmin[] = [
   {
     email: 'admin@test.jobbrowser.app',
-    password: 'TestPassword123!@#',
+    password: '',
     role: 'superadmin',
   },
   {
     email: 'moderator@test.jobbrowser.app',
-    password: 'TestPassword123!@#',
+    password: '',
     role: 'moderator',
   },
 ];
@@ -254,10 +254,15 @@ async function seedCompanies(): Promise<Map<string, string>> {
  */
 async function seedAdmins(): Promise<void> {
   console.log('\n=== Seeding Admin Users ===');
+  const samplePassword = process.env.SEED_SAMPLE_ADMIN_PASSWORD;
+  if (!samplePassword) {
+    console.log('Skipped demo admins. Set SEED_SAMPLE_ADMIN_PASSWORD only on a private demo database.');
+    return;
+  }
 
   for (const admin of testAdmins) {
     try {
-      const passwordHash = await bcryptjs.hash(admin.password, 10);
+      const passwordHash = await bcryptjs.hash(samplePassword, 10);
 
       await query(
         `INSERT INTO admin_users (email, password_hash, role)
@@ -368,30 +373,34 @@ async function verifySeed(): Promise<void> {
  */
 async function seedProduction() {
   try {
-    console.log('🚀 Starting Production Database Seeding...');
-    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`Database: ${process.env.DATABASE_URL ? 'Connected' : 'Not configured'}`);
+    if (!process.env.DATABASE_URL) {
+      console.error('DATABASE_URL is not set.');
+      process.exit(1);
+    }
 
-    // Seed companies first
-    const companyMap = await seedCompanies();
+    console.log('JobBrowser database setup');
+    if (process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
+      const passwordHash = await bcryptjs.hash(process.env.ADMIN_PASSWORD, 10);
+      await query(
+        `INSERT INTO admin_users (email, password_hash, role)
+         VALUES ($1, $2, 'admin')
+         ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash, role = 'admin'`,
+        [process.env.ADMIN_EMAIL.toLowerCase(), passwordHash]
+      );
+      console.log(`Admin row saved for ${process.env.ADMIN_EMAIL}`);
+    } else {
+      console.log('No ADMIN_EMAIL / ADMIN_PASSWORD. Admin sign-in can still use those env vars without a database row.');
+    }
 
-    // Seed jobs with company references
-    await seedJobs(companyMap);
-
-    // Seed admin users
-    await seedAdmins();
-
-    // Verify results
-    await verifySeed();
-
-    console.log('\n✓ Production seeding complete!');
-    console.log('\nNext steps:');
-    console.log('1. Login as admin@test.jobbrowser.app to verify admin access');
-    console.log('2. Search for jobs with title "bsa_UAT_t1_" to verify job listing');
-    console.log('3. Test affiliate tracking by clicking apply buttons');
-    console.log('\nCleanup:');
-    console.log('DELETE FROM jobs WHERE title LIKE \'bsa_UAT_t1_%\';');
-    console.log('DELETE FROM companies WHERE name LIKE \'%UAT%\';');
+    if (process.env.SEED_SAMPLE_JOBS === 'true') {
+      console.log('Inserting labeled UAT fixtures. Do not run this against the public database.');
+      const companyMap = await seedCompanies();
+      await seedJobs(companyMap);
+      await seedAdmins();
+      await verifySeed();
+    } else {
+      console.log('Sample listings were not inserted. Use npm run ingest after the affiliate keys are set.');
+    }
   } catch (error) {
     console.error('❌ Seeding failed:', error);
     process.exit(1);

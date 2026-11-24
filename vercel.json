@@ -1,74 +1,16 @@
 {
-  "projectSettings": {
-    "framework": "nextjs"
-  },
+  "framework": "nextjs",
   "buildCommand": "npm run build",
-  "outputDirectory": ".next",
   "installCommand": "npm install",
-  "env": [
-    "NODE_ENV",
-    "NEXTAUTH_SECRET",
-    "NEXTAUTH_URL",
-    "DATABASE_URL",
-    "GOOGLE_CLIENT_ID",
-    "GOOGLE_CLIENT_SECRET",
-    "GITHUB_CLIENT_ID",
-    "GITHUB_CLIENT_SECRET",
-    "SENDGRID_API_KEY",
-    "SENDGRID_FROM_EMAIL",
-    "SENTRY_DSN",
-    "NEXT_PUBLIC_SENTRY_DSN",
-    "SENTRY_ORG",
-    "SENTRY_PROJECT",
-    "SENTRY_AUTH_TOKEN",
-    "AWS_ACCESS_KEY_ID",
-    "AWS_SECRET_ACCESS_KEY",
-    "AWS_REGION",
-    "NEXT_PUBLIC_SUPABASE_URL",
-    "SUPABASE_SERVICE_KEY",
-    "CAREERJET_API_KEY",
-    "JOOBLE_API_KEY",
-    "CRON_SECRET",
-    "NEXT_PUBLIC_APP_NAME",
-    "NEXT_PUBLIC_API_BASE_URL",
-    "NEXT_PUBLIC_APP_BASE_URL"
-  ],
-  "redirects": [
-    {
-      "source": "/ae",
-      "destination": "/?region=ae",
-      "permanent": false
-    },
-    {
-      "source": "/sa",
-      "destination": "/?region=sa",
-      "permanent": false
-    },
-    {
-      "source": "/in",
-      "destination": "/?region=in",
-      "permanent": false
-    },
-    {
-      "source": "/au",
-      "destination": "/?region=au",
-      "permanent": false
-    },
-    {
-      "source": "/us",
-      "destination": "/?region=us",
-      "permanent": false
-    }
-  ],
-  "regions": ["iad1", "sfo1", "dub1"],
+  "regions": ["iad1"],
   "crons": [
     {
-      "path": "/api/cron/send-alerts",
-      "schedule": "0 8 * * 0"
+      "path": "/api/cron/daily",
+      "schedule": "0 3 * * *"
     },
     {
-      "path": "/api/cron/expire-jobs",
-      "schedule": "0 0 * * *"
+      "path": "/api/cron/send-alerts",
+      "schedule": "0 16 * * *"
     }
   ]
 }

@@ -6,6 +6,7 @@ import Filters, { FiltersState } from '@/components/job/Filters';
 import JobCard from '@/components/job/JobCard';
 import Pagination from '@/components/ui/Pagination';
 import EmptyState from '@/components/ui/EmptyState';
+import AdSlot from '@/components/monetization/AdSlot';
 import Loading from '@/components/ui/Loading';
 import Button from '@/components/ui/Button';
 
@@ -28,6 +29,7 @@ interface ApiResponse {
   page: number;
   pages: number;
   error?: string;
+  message?: string;
 }
 
 export default function SearchPageClient() {
@@ -63,8 +65,13 @@ export default function SearchPageClient() {
       const response = await fetch(`/api/jobs?${params.toString()}`);
       const data: ApiResponse = await response.json();
 
-      if (data.error) {
-        throw new Error(data.error);
+      if (!response.ok || data.error) {
+        const unavailable = data.error === 'database_unavailable' || data.error === 'schema_out_of_date';
+        throw new Error(
+          unavailable
+            ? data.message || 'Listings are temporarily unavailable.'
+            : data.error || 'Failed to fetch jobs'
+        );
       }
 
       setJobs(data.jobs);
@@ -82,7 +89,7 @@ export default function SearchPageClient() {
 
   useEffect(() => {
     fetchJobs(1);
-  }, [filters]);
+  }, [fetchJobs]);
 
   const handlePageChange = (page: number) => {
     fetchJobs(page);
@@ -123,6 +130,7 @@ export default function SearchPageClient() {
               {total > 0 ? `${total} jobs found` : 'No jobs found'}
             </h2>
           </div>
+          <AdSlot slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_SEARCH} />
 
           {isLoading && <Loading count={5} />}
 
