@@ -93,7 +93,7 @@ The “1,000 indexed jobs” launch target is this step. The code cannot meet it
 
 The two Vercel cron jobs, which is the free-tier maximum, and both run once a day:
 
-- `0 3 * * *` → `/api/cron/daily` ingests one keyword/region slot and expires jobs that were not seen for 30 days, or whose `expires_at` has passed.
+- `0 5 * * *` → `/api/cron/daily` ingests one keyword/region slot and expires jobs that were not seen for 30 days, or whose `expires_at` has passed.
 - `0 16 * * *` → `/api/cron/send-alerts` sends the weekly digest only to people whose last email was at least 7 days ago.
 
 Both return 401 until `CRON_SECRET` is set. Vercel adds the bearer header for you when that variable exists.

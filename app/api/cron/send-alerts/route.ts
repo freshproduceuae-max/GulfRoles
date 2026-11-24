@@ -4,7 +4,6 @@ import { runDigest } from '@/lib/alerts/run-digest';
 import { serverErrorResponse } from '@/lib/http';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60;
 
 async function handle(request: NextRequest): Promise<NextResponse> {
   if (!isAuthorizedCron(request)) {

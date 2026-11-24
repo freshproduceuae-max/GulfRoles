@@ -5,7 +5,6 @@ import { query } from '@/lib/db';
 import { serverErrorResponse } from '@/lib/http';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60;
 
 async function handle(request: NextRequest): Promise<NextResponse> {
   if (!isAuthorizedCron(request)) {

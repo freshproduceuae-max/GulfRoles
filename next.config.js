@@ -92,7 +92,14 @@ const nextConfig = {
   },
 };
 
-// Only apply Sentry config if auth token is available
+// Source-map upload needs a real Sentry org token. A blank or placeholder
+// value must not fail the Vercel build. Runtime reporting still uses SENTRY_DSN.
+function sentryTokenIsUsable(token) {
+  if (!token || token.includes('your-auth-token') || token.includes('example')) return false;
+  const parts = token.split('_');
+  return parts[0] === 'sntrys' && parts.length >= 3 && parts[1].length > 16;
+}
+
 const sentryConfig = {
   org: process.env.SENTRY_ORG || 'jobbrowser',
   project: process.env.SENTRY_PROJECT || 'jobbrowser',
@@ -102,8 +109,11 @@ const sentryConfig = {
   releaseHealthSamples: {
     sessionSampleRate: 0.1,
   },
+  errorHandler(err) {
+    console.warn('Sentry build step skipped:', err && err.message ? err.message : err);
+  },
 };
 
-export default process.env.SENTRY_AUTH_TOKEN
+export default sentryTokenIsUsable(process.env.SENTRY_AUTH_TOKEN)
   ? withSentryConfig(nextConfig, sentryConfig)
   : nextConfig;
