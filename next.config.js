@@ -84,7 +84,7 @@ const nextConfig = {
           },
           {
             key: 'Cache-Control',
-            value: 'public, s-maxage=604800',
+            value: 'public, max-age=60',
           },
         ],
       },

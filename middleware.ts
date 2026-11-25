@@ -1,26 +1,36 @@
-import { withAuth } from 'next-auth/middleware';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { getToken } from 'next-auth/jwt';
+import { isSitePublic } from '@/lib/site';
 
-export default withAuth(
-  function middleware() {
-    // Middleware logic here if needed
-  },
-  {
-    callbacks: {
-      authorized({ token, req }) {
-        // Allow /admin/login without authentication
-        if (req.nextUrl.pathname === '/admin/login') {
-          return true;
-        }
-        // Allow access to other /admin routes only if user is authenticated
-        if (req.nextUrl.pathname.startsWith('/admin')) {
-          return !!token;
-        }
-        return !!token;
-      },
-    },
+function withRobots(response: NextResponse, pathname: string): NextResponse {
+  const privateArea =
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/employer') ||
+    pathname.startsWith('/application-status') ||
+    pathname.startsWith('/api');
+  if (!isSitePublic() || privateArea) {
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow');
   }
-);
+  return response;
+}
+
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    if (!token) {
+      const login = request.nextUrl.clone();
+      login.pathname = '/admin/login';
+      login.search = '';
+      return withRobots(NextResponse.redirect(login), pathname);
+    }
+  }
+
+  return withRobots(NextResponse.next(), pathname);
+}
 
 export const config = {
-  matcher: ['/admin', '/admin/:path*'],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)'],
 };

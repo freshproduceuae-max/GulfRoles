@@ -1,8 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /admin
-Disallow: /api
-Disallow: /_next
-Disallow: /uploads
-
-Sitemap: https://jobbrowser.app/sitemap.xml

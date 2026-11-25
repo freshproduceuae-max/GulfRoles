@@ -23,6 +23,7 @@ export default function ApplyModal({ jobId, jobTitle, onClose }: ApplyModalProps
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [statusPath, setStatusPath] = useState<string | null>(null);
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -35,16 +36,13 @@ export default function ApplyModal({ jobId, jobTitle, onClose }: ApplyModalProps
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validate file type
-      const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
-      if (!allowedTypes.includes(file.type)) {
-        setError('Only PDF, DOC, DOCX, and TXT files are allowed');
+      const name = file.name.toLowerCase();
+      if (!name.endsWith('.pdf') && !name.endsWith('.docx')) {
+        setError('Only PDF and DOCX files are allowed');
         return;
       }
-
-      // Validate file size (5MB max)
       if (file.size > 4 * 1024 * 1024) {
-        setError('File size must be less than 4MB');
+        setError('CV must be 4MB or smaller');
         return;
       }
 
@@ -70,7 +68,7 @@ export default function ApplyModal({ jobId, jobTitle, onClose }: ApplyModalProps
         throw new Error('Valid email is required');
       }
       if (!resumeFile) {
-        throw new Error('Resume file is required');
+        throw new Error('A PDF or DOCX CV is required');
       }
 
       // Create FormData for multipart upload
@@ -98,10 +96,8 @@ export default function ApplyModal({ jobId, jobTitle, onClose }: ApplyModalProps
         throw new Error(data.error || 'Failed to submit application');
       }
 
+      setStatusPath(typeof data.status_path === 'string' ? data.status_path : null);
       setSuccess(true);
-      setTimeout(() => {
-        onClose();
-      }, 2000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -124,8 +120,13 @@ export default function ApplyModal({ jobId, jobTitle, onClose }: ApplyModalProps
             Application Submitted!
           </h3>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            Your application has been successfully submitted. The employer will review it shortly.
+            The employer has your application. A confirmation email is sent when mail is configured. The CV is kept for 12 months and is not sold.
           </p>
+          {statusPath ? (
+            <a href={statusPath} className="inline-block mb-4 text-primary-700 underline">
+              Check application status
+            </a>
+          ) : null}
           <Button variant="primary" onClick={onClose}>
             Close
           </Button>
@@ -144,10 +145,11 @@ export default function ApplyModal({ jobId, jobTitle, onClose }: ApplyModalProps
         )}
 
         <div>
-          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
+          <label htmlFor="applicant_name" className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
             Full Name *
           </label>
           <Input
+            id="applicant_name"
             type="text"
             name="applicant_name"
             value={formData.applicant_name}
@@ -158,10 +160,11 @@ export default function ApplyModal({ jobId, jobTitle, onClose }: ApplyModalProps
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
+          <label htmlFor="applicant_email" className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
             Email Address *
           </label>
           <Input
+            id="applicant_email"
             type="email"
             name="applicant_email"
             value={formData.applicant_email}
@@ -172,10 +175,11 @@ export default function ApplyModal({ jobId, jobTitle, onClose }: ApplyModalProps
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
+          <label htmlFor="applicant_phone" className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
             Phone Number
           </label>
           <Input
+            id="applicant_phone"
             type="tel"
             name="applicant_phone"
             value={formData.applicant_phone}
@@ -186,13 +190,13 @@ export default function ApplyModal({ jobId, jobTitle, onClose }: ApplyModalProps
 
         <div>
           <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
-            Resume (PDF, DOC, DOCX, or TXT) *
+            CV (PDF or DOCX) *
           </label>
           <div className="relative">
             <input
               type="file"
               onChange={handleFileChange}
-              accept=".pdf,.doc,.docx,.txt"
+              accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               className="hidden"
               id="resume-input"
               required
@@ -208,7 +212,7 @@ export default function ApplyModal({ jobId, jobTitle, onClose }: ApplyModalProps
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   {resumeFile ? resumeFile.name : 'Click to upload or drag and drop'}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Max 5MB</p>
+                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">PDF or DOCX, max 4MB</p>
               </div>
             </label>
           </div>
@@ -216,9 +220,10 @@ export default function ApplyModal({ jobId, jobTitle, onClose }: ApplyModalProps
 
         <div>
           <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
-            Cover Letter (Optional)
+            Cover note (optional)
           </label>
           <textarea
+            aria-label="Cover note"
             name="cover_letter"
             value={formData.cover_letter}
             onChange={handleInputChange}

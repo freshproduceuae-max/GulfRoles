@@ -49,7 +49,7 @@ export default function ApplicantsList({ applications, onStatusChange }: Applica
   return (
     <div className="space-y-3">
       {applications.map((application) => (
-        <div key={application.id}>
+        <div key={application.id} data-status={application.status}>
           {/* Collapsed View */}
           <button
             onClick={() => setExpandedId(expandedId === application.id ? null : application.id)}
@@ -136,7 +136,7 @@ export default function ApplicantsList({ applications, onStatusChange }: Applica
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
-                    Download Resume
+                    Download CV
                   </a>
                 </div>
               )}
@@ -145,7 +145,7 @@ export default function ApplicantsList({ applications, onStatusChange }: Applica
               {application.cover_letter && (
                 <div>
                   <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-                    Cover Letter
+                    Cover note
                   </h4>
                   <div className="bg-white dark:bg-gray-800 rounded-lg p-4 text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed border border-gray-200 dark:border-gray-700">
                     {application.cover_letter}

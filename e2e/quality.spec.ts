@@ -52,14 +52,15 @@ test('search, job view, save, and apply redirect', async ({ page }) => {
   await page.getByRole('main').getByRole('button', { name: 'Search' }).click();
   await expect(page).toHaveURL(/\/search\?/);
   await expect(page.getByRole('heading', { name: 'Ward nurse' })).toBeVisible();
-  await page.getByRole('link', { name: 'View job' }).first().click();
+  await page.getByRole('link', { name: /Ward nurse/ }).first().click();
+  await expect(page).toHaveURL(/\/jobs\//);
   await expect(page.getByRole('heading', { name: 'Ward nurse' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Apply on Careerjet' })).toBeVisible();
   await page.getByRole('button', { name: 'Save job' }).click();
   await page.goto('/saved');
   await expect(page.getByRole('heading', { name: 'Ward nurse' })).toBeVisible();
   await page.goto('/search?q=nurse');
-  await page.getByRole('link', { name: 'View job' }).first().click();
+  await page.getByRole('link', { name: /Ward nurse/ }).first().click();
   const popup = page.waitForURL(/example\.com|careerjet|\/api\/affiliate/);
   await page.getByRole('link', { name: /Apply on/ }).click();
   await popup;

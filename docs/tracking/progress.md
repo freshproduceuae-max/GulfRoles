@@ -3,7 +3,7 @@
 **Project:** Legitimate Job Aggregator (GulfRoles)  
 **Product name:** JobBrowser (`jobbrowser.app`)  
 **Started:** 2026-07-23  
-**Updated:** 2026-11-24
+**Updated:** 2026-11-25
 
 The July status below was never updated after the 28–30 July build. This revision matches the code on the MVP branch, not the old “phases 02–08 pending” table.
 
@@ -30,7 +30,7 @@ From `docs/MVP-REQUIREMENTS.md` and `docs/MASTER-SPECIFICATION.md` §10.
 | 1,000+ jobs indexed | Not yet. Ingestion is implemented. The count stays at zero until Careerjet, Jooble, and Adzuna keys are set and `npm run ingest` is run. |
 | Homepage, search, job pages live and indexed | Pages and sitemap exist. Google indexing waits on Search Console after the domain loads. |
 | Free 3-step job post and email verification | Routes fixed. Email sends only when `SENDGRID_API_KEY` is set. |
-| Applicant inbox | Works for the signed-in employer. Resumes are in Postgres, not a public folder. |
+| Applicant inbox | Employer dashboard lists jobs and counts. Inbox opens the CV and sets shortlist or reject. Candidate gets a confirmation and a status page. CVs stay private for 12 months. |
 | Weekly alert digest | Sends when `/api/cron/send-alerts` runs and the last email was at least 7 days ago. Subscriber count is an operating result, not a code result. |
 | Admin moderation | Queue, approve, and reject. Sign-in reads `ADMIN_EMAIL` and `ADMIN_PASSWORD` or `ADMIN_PASSWORD_HASH`. |
 | Affiliate click tracking | Click route records Careerjet, Jooble, and Adzuna and redirects to the partner URL. |

@@ -357,7 +357,7 @@ function truncateDescription(text: string, length: number): string {
 /**
  * Escape HTML entities
  */
-function escapeHtml(text: string): string {
+export function escapeHtml(text: string): string {
   const htmlEscapeMap: Record<string, string> = {
     '&': '&amp;',
     '<': '&lt;',
@@ -570,16 +570,55 @@ export function generateApplicationEmail(input: {
   companyName: string;
   applicantName: string;
   applicantEmail: string;
+  applicantPhone?: string | null;
   coverLetter?: string | null;
+  inboxUrl: string;
 }): { subject: string; html: string; text: string } {
   const subject = `New application for ${input.jobTitle}`;
   const text = [
     `${input.applicantName} (${input.applicantEmail}) applied for ${input.jobTitle} at ${input.companyName}.`,
+    input.applicantPhone ? `Phone: ${input.applicantPhone}` : '',
     input.coverLetter ? `Note: ${input.coverLetter}` : '',
-    'The resume is in your JobBrowser applicant inbox. JobBrowser does not sell applicant CVs.',
+    `Open the applicant and download the CV: ${input.inboxUrl}`,
+    'Sign in with your employer email link if that page asks you to. JobBrowser does not sell applicant CVs.',
   ]
     .filter(Boolean)
     .join('\n\n');
-  const html = `<p>${text.replace(/\n/g, '<br />')}</p>`;
+  const html = `<p>${escapeHtml(text).replace(/\n/g, '<br />')}</p><p><a href="${escapeHtml(input.inboxUrl)}">Open applicants</a></p>`;
+  return { subject, html, text };
+}
+
+export function generateCandidateConfirmationEmail(input: {
+  applicantName: string;
+  jobTitle: string;
+  companyName: string;
+  statusUrl: string;
+}): { subject: string; html: string; text: string } {
+  const subject = `Application received for ${input.jobTitle}`;
+  const text = [
+    `Hello ${input.applicantName},`,
+    `Your application for ${input.jobTitle} at ${input.companyName} is with that employer.`,
+    `You can check the status here: ${input.statusUrl}`,
+    'The CV is available only to that employer and to the JobBrowser operator. It is deleted after 12 months, or sooner if you ask.',
+  ].join('\n\n');
+  const html = `<p>${escapeHtml(text).replace(/\n/g, '<br />')}</p><p><a href="${escapeHtml(input.statusUrl)}">Check application status</a></p>`;
+  return { subject, html, text };
+}
+
+export function generateCandidateStatusEmail(input: {
+  applicantName: string;
+  jobTitle: string;
+  companyName: string;
+  status: 'shortlisted' | 'rejected';
+  statusUrl: string;
+}): { subject: string; html: string; text: string } {
+  const label = input.status === 'shortlisted' ? 'shortlisted' : 'not moving forward';
+  const subject = `Update on your application for ${input.jobTitle}`;
+  const text = [
+    `Hello ${input.applicantName},`,
+    `${input.companyName} marked your application for ${input.jobTitle} as ${label}.`,
+    `See the status here: ${input.statusUrl}`,
+  ].join('\n\n');
+  const html = `<p>${escapeHtml(text).replace(/\n/g, '<br />')}</p>`;
   return { subject, html, text };
 }

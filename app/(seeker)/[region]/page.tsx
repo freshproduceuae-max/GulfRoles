@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { HomeView, regionMetadata } from '../page';
+import { HomeView, regionMetadata } from '@/components/seeker/HomeView';
 import { getFeaturedJobs } from '@/lib/jobs';
 import { regionBySlug } from '@/lib/regions';
 

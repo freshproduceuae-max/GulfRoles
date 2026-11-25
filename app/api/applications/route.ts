@@ -1,10 +1,17 @@
+import { randomUUID } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
+import { ZodError } from 'zod';
 import { query } from '@/lib/db';
-import { validateResume } from '@/lib/storage';
+import { validateResume, resumeStorageFromEnv } from '@/lib/storage';
 import { ApplicationCreateSchema } from '@/lib/validation';
 import { canAccessJob } from '@/lib/access';
 import { serverErrorResponse } from '@/lib/http';
-import { sendEmail, generateApplicationEmail } from '@/lib/email';
+import {
+  sendEmail,
+  generateApplicationEmail,
+  generateCandidateConfirmationEmail,
+} from '@/lib/email';
+import { appBaseUrl } from '@/lib/site';
 
 const APPLICATION_COLUMNS = `
   id, job_id, applicant_name, applicant_email, applicant_phone,
@@ -13,7 +20,7 @@ const APPLICATION_COLUMNS = `
 
 /**
  * GET /api/applications?job_id=
- * Employer or admin only. Resumes are not included in the JSON.
+ * Employer or admin only. Resume bytes are not included.
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
@@ -64,14 +71,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  let applicationId: string | null = null;
   try {
     const formData = await request.formData();
-    const jobId = formData.get('job_id') as string;
-    const applicantName = formData.get('applicant_name') as string;
-    const applicantEmail = formData.get('applicant_email') as string;
-    const applicantPhone = formData.get('applicant_phone') as string | null;
-    const coverLetter = formData.get('cover_letter') as string | null;
-    const resumeFile = formData.get('resume') as File | null;
+    const jobId = String(formData.get('job_id') || '');
+    const applicantName = String(formData.get('applicant_name') || '');
+    const applicantEmail = String(formData.get('applicant_email') || '');
+    const applicantPhone = formData.get('applicant_phone');
+    const coverLetter = formData.get('cover_letter');
+    const resumeFile = formData.get('resume');
 
     if (!jobId || !applicantName || !applicantEmail) {
       return NextResponse.json(
@@ -79,16 +87,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         { status: 400 }
       );
     }
-    if (!resumeFile) {
-      return NextResponse.json({ error: 'Resume file is required' }, { status: 400 });
+    if (!(resumeFile instanceof File)) {
+      return NextResponse.json({ error: 'A PDF or DOCX CV is required' }, { status: 400 });
     }
 
     const validationData = ApplicationCreateSchema.parse({
       job_id: jobId,
       applicant_name: applicantName,
       applicant_email: applicantEmail,
-      applicant_phone: applicantPhone || undefined,
-      cover_letter: coverLetter || undefined,
+      applicant_phone: typeof applicantPhone === 'string' && applicantPhone ? applicantPhone : undefined,
+      cover_letter: typeof coverLetter === 'string' && coverLetter ? coverLetter : undefined,
     });
 
     const jobResult = await query<{
@@ -123,12 +131,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: errorMessage }, { status: 400 });
     }
 
+    const statusToken = randomUUID();
     const applicationResult = await query<{ id: string }>(
       `INSERT INTO applications (
         job_id, applicant_name, applicant_email, applicant_phone,
-        resume_filename, resume_content_type, resume_bytes, cover_letter,
-        status, created_at, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'submitted', NOW(), NOW())
+        resume_filename, resume_content_type, cover_letter,
+        status, status_token, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'submitted', $8, NOW(), NOW())
       RETURNING id`,
       [
         jobId,
@@ -137,18 +146,27 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         validationData.applicant_phone || null,
         resumeMeta.filename,
         resumeMeta.contentType,
-        resumeBuffer,
         validationData.cover_letter || null,
+        statusToken,
       ]
     );
 
-    const applicationId = applicationResult.rows[0]?.id;
+    applicationId = applicationResult.rows[0]?.id || null;
     if (!applicationId) {
       return NextResponse.json({ error: 'Failed to create application' }, { status: 500 });
     }
 
-    const resumeUrl = `/api/applications/${applicationId}/resume`;
-    await query('UPDATE applications SET resume_url = $1 WHERE id = $2', [resumeUrl, applicationId]);
+    const storage = resumeStorageFromEnv();
+    await storage.put({
+      applicationId,
+      bytes: resumeBuffer,
+      filename: resumeMeta.filename,
+      contentType: resumeMeta.contentType,
+    });
+
+    const statusPath = `/application-status/${statusToken}`;
+    const statusUrl = `${appBaseUrl()}${statusPath}`;
+    const inboxUrl = `${appBaseUrl()}/employer/inbox/${jobId}`;
 
     if (job.employer_email) {
       const email = generateApplicationEmail({
@@ -156,7 +174,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         companyName: job.company_name,
         applicantName: validationData.applicant_name,
         applicantEmail: validationData.applicant_email,
+        applicantPhone: validationData.applicant_phone,
         coverLetter: validationData.cover_letter,
+        inboxUrl,
       });
       const sent = await sendEmail({
         to: job.employer_email,
@@ -169,15 +189,38 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     }
 
+    const confirmation = generateCandidateConfirmationEmail({
+      applicantName: validationData.applicant_name,
+      jobTitle: job.title,
+      companyName: job.company_name,
+      statusUrl,
+    });
+    const candidateMail = await sendEmail({
+      to: validationData.applicant_email,
+      subject: confirmation.subject,
+      html: confirmation.html,
+      text: confirmation.text,
+    });
+    if (!candidateMail.success) {
+      console.error('Application saved but candidate email was not sent:', candidateMail.error);
+    }
+
     return NextResponse.json(
       {
         success: true,
-        message: 'Application submitted successfully. The employer receives it by email when mail is configured.',
+        message: 'Application submitted. A confirmation is emailed when mail is configured.',
         application_id: applicationId,
+        status_path: statusPath,
       },
       { status: 201 }
     );
   } catch (error) {
+    if (applicationId) {
+      await query('DELETE FROM applications WHERE id = $1', [applicationId]).catch(() => undefined);
+    }
+    if (error instanceof ZodError) {
+      return NextResponse.json({ error: error.issues[0]?.message || 'Invalid application' }, { status: 400 });
+    }
     console.error('Application submission error:', error instanceof Error ? error.message : error);
     return serverErrorResponse(error, 'Failed to submit application');
   }

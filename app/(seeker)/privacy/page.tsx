@@ -22,7 +22,13 @@ export default function PrivacyPage() {
       </PageSection>
       <PageSection heading="Applications and CVs">
         <p>
-          When you apply to a job posted on JobBrowser, we store your name, email, optional phone number, cover note, and resume so that employer can read them. The file is kept in the database and is available only to that employer and to the site operator. JobBrowser does not sell CVs, resumes, or applicant lists. We do not build a resume database for recruiters in this version.
+          When you apply to a job posted on JobBrowser, we store your name, email, phone number if you give one, an optional cover note, and your CV so that employer can read them. The file is PDF or DOCX only, size-limited, and checked for active content before it is stored. It is kept in private storage: the database by default, or a private file store if the operator turns that on. There is no public link to the file.
+        </p>
+        <p>
+          Only the employer who posted that job, and a JobBrowser admin, can open or download the CV. Candidates can see the application status. They cannot download the file from the status page. JobBrowser does not sell CVs, resumes, or applicant lists, and does not build a resume database for recruiters.
+        </p>
+        <p>
+          An application and its CV are deleted 12 months after the application date. You can ask for deletion sooner by emailing {email}. We delete the application record and the file, except where a copy must be kept for a legal claim or a security log.
         </p>
         <p>
           Applications to Careerjet, Jooble, or Adzuna happen on those sites. We do not receive the CV you submit there. We record that a click left JobBrowser so we can count affiliate referrals.
