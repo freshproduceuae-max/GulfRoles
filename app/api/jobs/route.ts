@@ -237,11 +237,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         `INSERT INTO jobs (
           title, description, company_id, company_name, location, region, job_type,
           employer_email, employer_verified, salary_min, salary_max, salary_currency,
-          salary_normalized_usd, source, source_url, benefits, status, posted_at, expires_at
+          salary_normalized_usd, source, source_url, benefits, status, posted_at, expires_at,
+          google_jobs_allowed, cpc_tracked, redistributable
         ) VALUES (
           $1, $2, $3, $4, $5, $6, $7,
           $8, $9, $10, $11, $12,
-          $13, 'direct', $14, $15, 'draft', NOW(), NOW() + INTERVAL '30 days'
+          $13, 'direct', $14, $15, 'draft', NOW(), NOW() + INTERVAL '30 days',
+          true, false, true
         )
         RETURNING id`,
         [

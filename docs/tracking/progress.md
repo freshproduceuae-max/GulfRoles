@@ -17,7 +17,7 @@ The July status below was never updated after the 28–30 July build. This revis
 | 03 | Assets and media | Closed without a shoot | Text mark only. No stock photography and no paid asset pass. |
 | 04 | Site architecture | Complete | `/ae`, `/sa`, `/in`, `/au`, `/us` are pages. Employer flows live under `/employer`. Admin moderation lives under `/admin`. |
 | 05 | Build and implementation | Complete in code | Search, job page, alerts, employer magic link, applicant inbox, rule-based moderation, ingestion, expiry. |
-| 06 | Monetization integration | Code complete, not earning | Careerjet, Jooble, and Adzuna ingestion and click redirects. Ad slots render only when AdSense ids exist. Featured flag exists. No checkout. |
+| 06 | Monetization integration | Code complete, not earning | CPC partners, licensed Remote OK/Remotive feeds, employer ATS opt-in, click report, dormant AdSense slots, featured flag. No seats and no checkout. |
 | 07 | Deployment and launch | Waiting on the owner | App builds. Production still needs a hosted database, Vercel env, affiliate keys, and the `jobbrowser.app` certificate. Steps are in `LAUNCH.md`. |
 | 08 | Maintenance and handoff | Handoff written | `LAUNCH.md` is the operator guide. Ongoing moderation and key renewal stay with the owner. |
 

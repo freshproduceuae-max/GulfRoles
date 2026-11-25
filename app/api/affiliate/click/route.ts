@@ -3,10 +3,10 @@ import {
   trackAffiliateClick,
   generateAffiliateUrl,
   isAffiliateSource,
-  type AffiliateNetwork,
 } from '@/lib/affiliate';
 import { queryOne } from '@/lib/db';
 import { serverErrorResponse } from '@/lib/http';
+import { isBlockedIngestUrl } from '@/lib/sources/policy';
 
 /**
  * GET /api/affiliate/click?job=<id>
@@ -25,30 +25,33 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       title: string;
       source: string;
       source_url: string | null;
-    }>('SELECT id, title, source, source_url FROM jobs WHERE id = $1 AND deleted_at IS NULL', [jobId]);
+      apply_url: string | null;
+    }>('SELECT id, title, source, source_url, apply_url FROM jobs WHERE id = $1 AND deleted_at IS NULL', [jobId]);
 
     if (!job) {
       return NextResponse.json({ error: 'Job not found' }, { status: 404 });
     }
 
-    if (!isAffiliateSource(job.source)) {
+    if (job.source === 'direct') {
       return NextResponse.redirect(new URL(`/jobs/${job.id}`, request.url));
     }
 
-    const network = job.source as AffiliateNetwork;
     const userAgent = request.headers.get('user-agent') || undefined;
     const referrer = request.headers.get('referer') || undefined;
     const forwardedFor = request.headers.get('x-forwarded-for');
     const ipAddress = forwardedFor ? forwardedFor.split(',')[0].trim() : undefined;
 
-    await trackAffiliateClick(jobId, network, undefined, userAgent, referrer, ipAddress).catch((error) => {
+    await trackAffiliateClick(jobId, job.source, undefined, userAgent, referrer, ipAddress).catch((error) => {
       console.error('Error tracking affiliate click:', error);
     });
 
-    const affiliateUrl = job.source_url || generateAffiliateUrl(jobId, network, job.title);
-    if (!affiliateUrl) {
+    const affiliateUrl =
+      job.apply_url ||
+      job.source_url ||
+      (isAffiliateSource(job.source) ? generateAffiliateUrl(jobId, job.source, job.title) : '');
+    if (!affiliateUrl || isBlockedIngestUrl(affiliateUrl)) {
       return NextResponse.json(
-        { error: `${network} apply link is not available yet` },
+        { error: 'This listing does not have an allowed apply link' },
         { status: 503 }
       );
     }

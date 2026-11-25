@@ -170,6 +170,14 @@ These were made while finishing the code against the locked MVP. They do not cha
 
 **Rationale:** Vercel’s disk is ephemeral, and a public uploads folder would expose CVs. CV resale stays forbidden.
 
+### 2026-11-25 — Legal inventory, not a second catalog
+
+**Choice:** CPC partners (Careerjet, Jooble, Adzuna) stay, with Google JobPosting off until a contract allows it. Employers can opt in a public Greenhouse, Lever, Ashby, or Workable board. Remote OK and Remotive are optional licensed feeds. Remotive rows are not marked up for Google Jobs and are not redistributable. Indeed, Glassdoor, LinkedIn, and GulfTalent URLs are rejected.
+
+**Rationale:** The 25 Nov 2026 source catalog. Employers keep posting for free. Revenue stays clicks, ads, and later featured flags. A parallel branch hardcoded three company boards and duplicated JSON-LD; those listings are not ingested unless the employer opts in.
+
+**Revenue target:** about $100k over 24 months, from several streams. That number is a plan, not a forecast in the code.
+
 ### Ads and featured jobs
 
 **Choice:** AdSense markup renders only when the publisher id and slot ids are set. `listing_tier = featured` can be set by an admin API. No payment provider.

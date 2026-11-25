@@ -61,13 +61,17 @@ export default async function JobPage({ params }: { params: { id: string } }) {
     salaryMax: job.salary_max,
     salaryCurrency: job.salary_currency,
     salaryUnit: null,
+    source: job.source,
+    googleJobsAllowed: job.google_jobs_allowed,
     directApply: job.source === 'direct',
     url: `${appBaseUrl()}/jobs/${job.id}`,
   });
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }} />
+      {jsonLd ? (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }} />
+      ) : null}
       <JobDetailView
         job={{
           ...job,

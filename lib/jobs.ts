@@ -13,6 +13,10 @@ export interface PublicJob {
   job_type: string | null;
   source: string;
   source_url: string | null;
+  apply_url: string | null;
+  attribution: string | null;
+  google_jobs_allowed: boolean | null;
+  cpc_tracked: boolean;
   employer_verified: boolean;
   posted_at: string;
   expires_at: string | null;
@@ -36,6 +40,10 @@ interface JobRecord {
   job_type: string | null;
   source: string;
   source_url: string | null;
+  apply_url?: string | null;
+  attribution?: string | null;
+  google_jobs_allowed?: boolean | null;
+  cpc_tracked?: boolean;
   employer_verified: boolean;
   posted_at: string | Date;
   expires_at: string | Date | null;
@@ -48,7 +56,8 @@ interface JobRecord {
 
 const COLUMNS = `
   id, title, description, company_name, location, region,
-  salary_min, salary_max, salary_currency, job_type, source, source_url,
+  salary_min, salary_max, salary_currency, job_type, source, source_url, apply_url,
+  attribution, google_jobs_allowed, cpc_tracked,
   employer_verified, posted_at, expires_at, benefits, culture_notes, status,
   is_featured, listing_tier
 `;
@@ -73,6 +82,10 @@ export function toPublicJob(row: JobRecord): PublicJob {
     job_type: row.job_type,
     source: row.source,
     source_url: row.source_url,
+    apply_url: row.apply_url || null,
+    attribution: row.attribution || null,
+    google_jobs_allowed: row.google_jobs_allowed ?? null,
+    cpc_tracked: Boolean(row.cpc_tracked),
     employer_verified: row.employer_verified,
     posted_at: toIso(row.posted_at) || new Date().toISOString(),
     expires_at: toIso(row.expires_at),

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isAuthorizedCron } from '@/lib/cron-auth';
 import { expireStaleJobs, runIngestion } from '@/lib/ingestion/run';
+import { ingestLicensedSources } from '@/lib/sources/ingest';
 import { query } from '@/lib/db';
 import { serverErrorResponse } from '@/lib/http';
 
@@ -16,8 +17,9 @@ async function handle(request: NextRequest): Promise<NextResponse> {
 
   try {
     const ingest = await runIngestion({ db: { query }, slots });
+    const licensed = await ingestLicensedSources({ db: { query } });
     const expired = await expireStaleJobs({ query });
-    return NextResponse.json({ ok: true, ingest, expired });
+    return NextResponse.json({ ok: true, ingest, licensed, expired });
   } catch (error) {
     return serverErrorResponse(error, 'Daily job failed');
   }

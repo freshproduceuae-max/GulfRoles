@@ -15,7 +15,7 @@ Live site today: https://jobbrowser.vercel.app still points `DATABASE_URL` at lo
    npm run migrate
    ```
 
-4. `npm run migrate` applies `db/migrations/001_init_schema.sql`, `002_add_affiliate_tracking.sql`, and `003_ingestion_featured_resumes.sql`. It records what it has applied and can be run again safely.
+4. `npm run migrate` applies `db/migrations/001_init_schema.sql`, `002_add_affiliate_tracking.sql`, `003_ingestion_featured_resumes.sql`, and `004_source_policy.sql`. It records what it has applied and can be run again safely.
 5. Do not run `npm run seed` or `npm run seed:production` against this database. Those scripts can insert labeled demo jobs. Real listings come from the feeds.
 
 ## 2. Set environment variables in Vercel
@@ -51,15 +51,16 @@ After saving the variables, redeploy the project from the Vercel dashboard so th
 
 ## 3. Apply for the affiliate accounts
 
-The ingestion code calls the official publisher APIs. It does not scrape boards.
+The ingestion code calls official publisher APIs and public ATS boards. It does not scrape boards. Indeed, Glassdoor, LinkedIn, and GulfTalent are blocked even if a URL shows up in a feed.
 
-1. **Careerjet.** Apply for a publisher / affiliate account. Put the affiliate id in `CAREERJET_AFFILIATE_ID`. Their search API also requires `CAREERJET_USER_IP`. Use the value they approve. Do not invent an IP.
-2. **Jooble.** Request an API key at [jooble.org/api/about](https://jooble.org/api/about) and set `JOOBLE_API_KEY`.
-3. **Adzuna.** Create an app id and key. The crawl uses them for India (`in`), Australia (`au`), and the US (`us`). UAE and Saudi listings will not come from Adzuna.
+1. **Careerjet, Jooble, and Adzuna** stay the first CPC partners. Apply the same week to Talent.com, WhatJobs, Jobtome, JobRapido, and Jobg8 if you want more than one payout stream. Do not turn on `JobPosting` markup for those partners until the contract says Google for Jobs is allowed. The code leaves it off.
+2. **Remote OK and Remotive** are on by default (`LEGAL_FEEDS=remoteok,remotive`). Remotive jobs are stored with attribution and **without** Google JobPosting markup. Set `LEGAL_FEEDS=none` to skip them. Do not send Remotive jobs onward to Jooble or another board.
+3. **Employer career boards.** After the magic-link sign-in, the employer opens `/employer/sources` and enters a public Greenhouse, Lever, Ashby, or Workable board name. The next `/api/cron/daily` run indexes roles whose location matches the region they picked. There is no fee and no recruitment seat.
+4. **Clicks.** `/admin/revenue` groups clicks by source. Dollar figures there are estimates for the three CPC partners only.
 
-Clicks are stored in `affiliate_clicks`. A partner job’s Apply button tells the seeker which network they are going to, then redirects to that listing’s URL. Direct employer jobs stay on JobBrowser and are not counted as affiliate clicks.
+Careerjet still needs `CAREERJET_AFFILIATE_ID` and the `CAREERJET_USER_IP` they approve. Jooble needs `JOOBLE_API_KEY`. Adzuna needs `ADZUNA_APP_ID` and `ADZUNA_APP_KEY`, and only covers India, Australia, and the US.
 
-When the keys are in `.env.local` and `DATABASE_URL` points at the hosted database, pull a first batch from your computer (this is not limited by the Vercel cron timeout):
+When those keys are in `.env.local` and `DATABASE_URL` points at the hosted database, pull a first partner batch from your computer (this is not limited by the Vercel cron timeout):
 
 ```bash
 npm run ingest -- --slots=40

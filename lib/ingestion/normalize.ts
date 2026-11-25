@@ -23,7 +23,7 @@ export interface ParsedSalary {
 }
 
 export interface NormalizedListing {
-  source: 'adzuna' | 'careerjet' | 'jooble';
+  source: string;
   externalId: string;
   title: string;
   description: string;
@@ -38,6 +38,8 @@ export interface NormalizedListing {
   jobType: JobType;
   sourceUrl: string;
   postedAt: Date | null;
+  applyUrl?: string | null;
+  attribution?: string | null;
 }
 
 export function stripHtml(input: string): string {

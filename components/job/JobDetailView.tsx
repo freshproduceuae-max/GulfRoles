@@ -5,8 +5,8 @@ import Button from '@/components/ui/Button';
 import ApplyModal from '@/components/seeker/ApplyModal';
 import AdSlot from '@/components/monetization/AdSlot';
 
-function isPartnerSource(source: string): boolean {
-  return source === 'careerjet' || source === 'jooble' || source === 'adzuna';
+function leavesSite(source: string): boolean {
+  return source !== 'direct';
 }
 
 export interface JobDetailProps {
@@ -27,6 +27,8 @@ export interface JobDetailProps {
   culture_notes?: string | null;
   source: string;
   source_url?: string | null;
+  attribution?: string | null;
+  cpc_tracked?: boolean;
   is_featured?: boolean;
 }
 
@@ -34,12 +36,18 @@ const PARTNER_NAMES: Record<string, string> = {
   careerjet: 'Careerjet',
   jooble: 'Jooble',
   adzuna: 'Adzuna',
+  greenhouse: 'the company careers page',
+  lever: 'the company careers page',
+  ashby: 'the company careers page',
+  workable: 'the company careers page',
+  remoteok: 'Remote OK',
+  remotive: 'Remotive',
 };
 
 export default function JobDetailView({ job }: { job: JobDetailProps }) {
   const [showApplyModal, setShowApplyModal] = useState(false);
-  const partner = isPartnerSource(job.source);
-  const partnerName = PARTNER_NAMES[job.source] || 'the original board';
+  const partner = leavesSite(job.source);
+  const partnerName = PARTNER_NAMES[job.source] || job.source;
 
   const formatSalary = (): string => {
     if (!job.salary_min && !job.salary_max) return 'Salary not specified';
@@ -103,9 +111,12 @@ export default function JobDetailView({ job }: { job: JobDetailProps }) {
             {partner ? (
               <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 mb-4 text-sm text-amber-950">
                 <p className="font-medium mb-1">You apply on {partnerName}</p>
-                <p>
-                  JobBrowser may earn a commission if you continue. We do not send your CV or email to the partner, and we do not sell resumes.
-                </p>
+                <p>{job.attribution || 'This listing is shown with the source’s permission.'}</p>
+                {job.cpc_tracked ? (
+                  <p className="mt-2">JobBrowser may earn a commission on this click. We do not send your CV or email, and we do not sell resumes.</p>
+                ) : (
+                  <p className="mt-2">JobBrowser is not paid for this click and does not sell resumes.</p>
+                )}
               </div>
             ) : (
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">

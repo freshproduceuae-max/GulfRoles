@@ -29,6 +29,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <a href="/admin/moderation" className="text-sm text-gray-600 hover:text-gray-900 transition">
                 Moderation
               </a>
+              <a href="/admin/revenue" className="text-sm text-gray-600 hover:text-gray-900 transition">
+                Clicks
+              </a>
             </nav>
           </div>
         </div>

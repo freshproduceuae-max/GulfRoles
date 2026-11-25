@@ -1,4 +1,5 @@
 import { regionByDb, regionFromParam } from './regions';
+import { allowsGoogleJobs } from './sources/policy';
 
 export interface JobPostingInput {
   id: string;
@@ -17,6 +18,8 @@ export interface JobPostingInput {
   salaryUnit?: 'YEAR' | 'MONTH' | null;
   directApply: boolean;
   url: string;
+  source?: string | null;
+  googleJobsAllowed?: boolean | null;
 }
 
 const EMPLOYMENT: Record<string, string> = {
@@ -32,7 +35,8 @@ function isoDate(value: string | Date): string {
   return date.toISOString();
 }
 
-export function buildJobPostingJsonLd(job: JobPostingInput): Record<string, unknown> {
+export function buildJobPostingJsonLd(job: JobPostingInput): Record<string, unknown> | null {
+  if (!allowsGoogleJobs(job.source, job.googleJobsAllowed)) return null;
   const region = regionByDb(job.region) || regionFromParam(job.region);
   const description = job.description.trim() || job.title;
   const payload: Record<string, unknown> = {

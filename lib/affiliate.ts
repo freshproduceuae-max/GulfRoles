@@ -115,7 +115,7 @@ export function generateAffiliateUrl(
  */
 export async function trackAffiliateClick(
   jobId: string,
-  affiliate: AffiliateNetwork = 'careerjet',
+  affiliate: string = 'careerjet',
   userId?: string,
   userAgent?: string,
   referrer?: string,
