@@ -159,7 +159,7 @@ export default function JobDetailView({ job }: { job: JobDetailProps }) {
             {partner ? (
               <div className="flex flex-wrap gap-3">
                 <a
-                  href={`/api/affiliate/click?job=${encodeURIComponent(job.id)}`}
+                  href={`/api/apply/click?job=${encodeURIComponent(job.id)}`}
                   className="inline-flex items-center justify-center rounded-lg bg-primary-500 px-6 py-3 font-medium text-white hover:bg-primary-600"
                 >
                   Apply on {partnerName}

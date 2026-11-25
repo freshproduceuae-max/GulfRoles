@@ -86,7 +86,7 @@ const JobActions: React.FC<JobActionsProps> = ({ job, onApplyClick, affiliate = 
 
     // Track click and redirect to affiliate URL
     try {
-      const affiliateUrl = `/api/affiliate/click?job=${job.id}&network=${affiliate}&title=${encodeURIComponent(
+      const affiliateUrl = `/api/apply/click?job=${job.id}&network=${affiliate}&title=${encodeURIComponent(
         job.title
       )}`;
       window.location.href = affiliateUrl;

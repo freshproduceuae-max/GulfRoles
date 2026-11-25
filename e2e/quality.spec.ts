@@ -72,6 +72,12 @@ test('weekly alert signup', async ({ page }) => {
   await expect(page.getByText(/subscribed|already subscribed|unavailable|not configured/i)).toBeVisible();
 });
 
+test('employer can open the free post form without signing in', async ({ page }) => {
+  await page.goto('/employer/post-job');
+  await expect(page.getByRole('heading', { name: /Post a Job/i })).toBeVisible();
+  await expect(page.getByText(/does not sell recruitment seats/i)).toBeVisible();
+});
+
 test('employer post starts with a verification link', async ({ page }) => {
   const stamp = Date.now().toString();
   await page.goto('/employer/login');

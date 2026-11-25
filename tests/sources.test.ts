@@ -11,6 +11,10 @@ test('source policy keeps Google Jobs off for Remotive and CPC partners', () => 
   assert.equal(allowsGoogleJobs('careerjet'), false);
   assert.equal(allowsGoogleJobs('jooble'), false);
   assert.equal(allowsGoogleJobs('adzuna'), false);
+  assert.equal(allowsGoogleJobs('employer'), true);
+  assert.equal(allowsGoogleJobs('feed:remotive'), false);
+  assert.equal(allowsGoogleJobs('ats:greenhouse'), true);
+  assert.equal(allowsGoogleJobs('whatjobs'), false);
   assert.equal(policyFor('remotive').cpcTracked, false);
   assert.equal(policyFor('careerjet').cpcTracked, true);
   assert.equal(policyFor('remotive').redistributable, false);

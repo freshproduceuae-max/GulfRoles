@@ -33,13 +33,13 @@ export default function Header() {
             <Link
               href="/"
               className="flex items-center space-x-2 hover:opacity-80 transition"
-              aria-label="JobBrowser home"
+              aria-label="GulfRoles home"
             >
               <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">J</span>
+                <span className="text-white font-bold text-lg">G</span>
               </div>
               <span className="hidden sm:inline-block text-xl font-bold text-gray-900 dark:text-white">
-                JobBrowser
+                GulfRoles
               </span>
             </Link>
           </div>
