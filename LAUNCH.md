@@ -16,6 +16,8 @@ Migrations are `db/migrations/001_init_schema.sql` through `006_recruiter_worksp
 
 `npm run build` runs `tsx scripts/migrate.ts` before `next build`. `tsx` is a production dependency, so the migrate step still runs if `NODE_ENV=production` causes npm to skip devDependencies.
 
+Migrations run only when `VERCEL_ENV=production` or `RUN_MIGRATIONS=true`. `npm run migrate` sets that flag. Preview deployments share the production Neon database, so a preview build skips migrations and does not change live tables.
+
 ## 2. Set environment variables in Vercel
 
 Vercel dashboard → the JobBrowser project → Settings → Environment Variables. Set them for Production. Do not put them in git.
