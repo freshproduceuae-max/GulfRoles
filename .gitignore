@@ -55,3 +55,6 @@ Thumbs.db
 
 # Local testing
 .test/
+test-results/
+playwright-report/
+blob-report/

@@ -1,10 +1,7 @@
 import { redirect } from 'next/navigation';
 
-export const metadata = {
-  title: 'Verifying Email | JobBrowser',
-  description: 'Verifying your email for job posting',
-};
+export const dynamic = 'force-dynamic';
 
 export default function VerifyPage({ params }: { params: { token: string } }) {
-  redirect(`/api/auth/employer-verify/${encodeURIComponent(params.token)}`);
+  redirect(`/api/auth/employer-verify/${params.token}`);
 }

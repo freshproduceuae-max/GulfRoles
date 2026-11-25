@@ -14,6 +14,7 @@ export default function EmployerLoginForm() {
   });
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
+  const [verifyLink, setVerifyLink] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -51,6 +52,7 @@ export default function EmployerLoginForm() {
       }
 
       setSuccess(data.message || 'Check your email for a verification link');
+      setVerifyLink(typeof data.dev_verification_link === 'string' ? data.dev_verification_link : '');
       setFormData({ company_email: '', company_name: '' });
     } catch (err) {
       setError('An unexpected error occurred. Please try again.');
@@ -75,6 +77,11 @@ export default function EmployerLoginForm() {
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
               <p className="text-green-600 font-medium mb-2">Success!</p>
               <p className="text-green-700 text-sm">{success}</p>
+              {verifyLink ? (
+                <a className="mt-3 inline-block text-sm font-medium text-blue-700 underline" href={verifyLink}>
+                  Open verification link
+                </a>
+              ) : null}
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">

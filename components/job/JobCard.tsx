@@ -3,6 +3,18 @@
 import React from 'react';
 import Link from 'next/link';
 import type { Job } from '@/lib/validation';
+const SOURCE_LABELS: Record<string, string> = {
+  careerjet: 'Careerjet',
+  jooble: 'Jooble',
+  adzuna: 'Adzuna',
+  greenhouse: 'Greenhouse',
+  lever: 'Lever',
+  ashby: 'Ashby',
+  workable: 'Workable',
+  remoteok: 'Remote OK',
+  remotive: 'Remotive',
+  direct: 'JobBrowser',
+};
 
 // Support both full Job object and partial job data
 interface JobCardProps {
@@ -21,6 +33,7 @@ interface JobCardProps {
   employer_verified?: boolean;
   status?: string;
   application_count?: number;
+  source?: string;
   featured?: boolean;
   onApplyClick?: () => void;
 }
@@ -42,6 +55,7 @@ const JobCard: React.FC<JobCardProps> = ({
   status: propsStatus,
   application_count: propsApplicationCount,
   featured = false,
+  source,
   onApplyClick,
 }) => {
   // Merge job object and individual props (props take precedence)
@@ -132,12 +146,13 @@ const JobCard: React.FC<JobCardProps> = ({
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
                 {jobData.company_name}
+                {source ? <span className="text-gray-500"> · via {SOURCE_LABELS[source] || source}</span> : null}
               </p>
             </div>
           </div>
 
           {/* Salary */}
-          <div className="text-base font-semibold text-secondary-600 dark:text-secondary-400">
+          <div className="text-base font-semibold text-gray-800 dark:text-gray-100">
             {formatSalary()}
           </div>
 

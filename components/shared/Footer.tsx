@@ -21,7 +21,8 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
         { label: 'Jobs in India', href: '/in' },
         { label: 'Jobs in Australia', href: '/au' },
         { label: 'Jobs in the US', href: '/us' },
-        { label: 'Post a Job', href: '/employer/post-job' },
+        { label: 'Saved jobs', href: '/saved' },
+        { label: 'Post a job free', href: '/employer/post-job' },
         { label: 'Salary Guide', href: '/salary-guide' },
       ],
       company: [

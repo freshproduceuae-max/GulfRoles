@@ -3,6 +3,13 @@ import { randomUUID } from 'crypto';
 import { query } from '@/lib/db';
 import { serverErrorResponse } from '@/lib/http';
 
+function sameHostRedirect(request: NextRequest, path: string): NextResponse {
+  const host = request.headers.get('x-forwarded-host') || request.headers.get('host');
+  const proto = request.headers.get('x-forwarded-proto') || new URL(request.url).protocol.replace(':', '');
+  const target = host ? `${proto}://${host}${path}` : new URL(path, request.url).toString();
+  return NextResponse.redirect(target);
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { token: string } }
@@ -45,7 +52,7 @@ export async function GET(
       [companyId, email, sessionToken, sessionExpiresAt]
     );
 
-    const response = NextResponse.redirect(new URL('/employer/post-job', request.url));
+    const response = sameHostRedirect(request, '/employer/post-job');
     response.cookies.set('employer_session', sessionToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

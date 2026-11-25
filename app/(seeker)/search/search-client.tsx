@@ -21,6 +21,8 @@ interface FormattedJob {
   job_type?: string;
   posted_at: Date;
   region?: string;
+  source?: string;
+  description?: string;
 }
 
 interface ApiResponse {
@@ -51,13 +53,17 @@ export default function SearchPageClient() {
       const params = new URLSearchParams();
 
       if (searchParams.get('q')) params.append('q', searchParams.get('q')!);
-      if (searchParams.get('location')) params.append('location', searchParams.get('location')!);
-      if (searchParams.get('region')) params.append('region', searchParams.get('region')!);
-
-      if (filters.location) params.append('location', filters.location);
+      if (searchParams.get('location') || filters.location) {
+        params.append('location', filters.location || searchParams.get('location')!);
+      }
+      if (searchParams.get('region') || filters.region) {
+        params.append('region', filters.region || searchParams.get('region')!);
+      }
+      if (filters.category) params.append('category', filters.category);
       if (filters.job_type?.length) params.append('job_type', filters.job_type[0]);
       if (filters.salary_min) params.append('salary_min', filters.salary_min.toString());
-      if (filters.salary_max) params.append('salary_max', filters.salary_max.toString());
+      if (filters.posted_within) params.append('posted_within', filters.posted_within);
+      if (filters.remote) params.append('remote', 'true');
 
       params.append('page', page.toString());
       params.append('limit', '20');
@@ -108,6 +114,10 @@ export default function SearchPageClient() {
             onFiltersChange={handleFiltersChange}
             isLoading={isLoading}
             isMobile={false}
+            initial={{
+              location: searchParams.get('location') || undefined,
+              region: searchParams.get('region') || undefined,
+            }}
           />
         </div>
 
@@ -171,7 +181,8 @@ export default function SearchPageClient() {
                     salary_currency={job.salary_currency}
                     job_type={job.job_type}
                     posted_at={job.posted_at.toString()}
-                    region={job.region}
+                    source={job.source}
+                    description={job.description}
                   />
                 ))}
               </div>

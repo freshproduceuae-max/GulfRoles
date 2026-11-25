@@ -66,6 +66,24 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       filters.featured = true;
     }
 
+    const category = searchParams.get('category');
+    if (category) {
+      filters.category = category.slice(0, 40);
+    }
+
+    const postedWithin = searchParams.get('posted_within');
+    if (postedWithin) {
+      const days = Number(postedWithin);
+      if (days !== 1 && days !== 7 && days !== 30) {
+        return NextResponse.json({ error: 'posted_within must be 1, 7, or 30' }, { status: 400 });
+      }
+      filters.posted_within = days;
+    }
+
+    if (searchParams.get('remote') === 'true') {
+      filters.remote = true;
+    }
+
     // Job type filter
     const job_type = searchParams.get('job_type');
     if (job_type) {

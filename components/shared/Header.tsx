@@ -74,20 +74,23 @@ export default function Header() {
           </form>
 
           {/* Desktop Action Buttons */}
-          <div className="hidden md:flex items-center space-x-4">
-            <Link
-              href="/#job-alerts"
-              className="px-4 py-2 text-sm font-medium text-primary-500 border border-primary-500 rounded-lg hover:bg-primary-50 transition"
-            >
-              Set Alerts
+          <nav aria-label="Primary" className="hidden md:flex items-center gap-3">
+            <Link href="/search" className="text-sm font-medium text-gray-700 dark:text-gray-200">
+              Find jobs
+            </Link>
+            <Link href="/saved" className="text-sm font-medium text-gray-700 dark:text-gray-200">
+              Saved
+            </Link>
+            <Link href="/#job-alerts" className="text-sm font-medium text-gray-700 dark:text-gray-200">
+              Alerts
             </Link>
             <Link
               href="/employer/post-job"
-              className="px-4 py-2 text-sm font-medium text-white bg-secondary-500 rounded-lg hover:bg-secondary-600 transition"
+              className="px-4 py-2 text-sm font-medium text-white bg-secondary-500 rounded-lg hover:bg-secondary-600"
             >
-              Post a Job
+              Post a job free
             </Link>
-          </div>
+          </nav>
 
           {/* Mobile Hamburger Menu Button */}
           <button
@@ -143,17 +146,20 @@ export default function Header() {
             </form>
 
             <div className="space-y-2">
-              <Link
-                href="/#job-alerts"
-                className="block w-full px-4 py-2 text-sm font-medium text-center text-primary-500 border border-primary-500 rounded-lg"
-              >
-                Set Alerts
+              <Link href="/search" className="block w-full px-4 py-2 text-sm font-medium text-center border rounded-lg">
+                Find jobs
+              </Link>
+              <Link href="/saved" className="block w-full px-4 py-2 text-sm font-medium text-center border rounded-lg">
+                Saved
+              </Link>
+              <Link href="/#job-alerts" className="block w-full px-4 py-2 text-sm font-medium text-center border rounded-lg">
+                Alerts
               </Link>
               <Link
                 href="/employer/post-job"
                 className="block w-full px-4 py-2 text-sm font-medium text-center text-white bg-secondary-500 rounded-lg"
               >
-                Post a Job
+                Post a job free
               </Link>
             </div>
           </div>

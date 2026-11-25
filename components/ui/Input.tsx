@@ -8,7 +8,8 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ label, error, helperText, className, id, disabled, ...props }, ref) => {
-    const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
+    const generatedId = React.useId();
+    const inputId = id || generatedId;
 
     return (
       <div className="flex flex-col gap-1.5">

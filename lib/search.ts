@@ -80,6 +80,9 @@ export interface SearchFilters {
   page?: number;
   limit?: number;
   featured?: boolean;
+  category?: string;
+  posted_within?: number;
+  remote?: boolean;
 }
 
 /**
@@ -193,6 +196,22 @@ export function buildSearchQuery(filters: SearchFilters): {
 
   if (filters.featured) {
     conditions.push('(jobs.is_featured = TRUE AND (jobs.featured_until IS NULL OR jobs.featured_until > NOW()))');
+  }
+
+  if (filters.remote) {
+    conditions.push(
+      "(jobs.location ILIKE '%remote%' OR jobs.title ILIKE '%remote%' OR jobs.description ILIKE '%remote%')"
+    );
+  }
+
+  if (filters.category && filters.category.trim()) {
+    conditions.push('(jobs.title ILIKE $' + paramCount + ' OR jobs.description ILIKE $' + paramCount + ')');
+    params.push('%' + filters.category.trim() + '%');
+    paramCount++;
+  }
+
+  if (filters.posted_within === 1 || filters.posted_within === 7 || filters.posted_within === 30) {
+    conditions.push(`jobs.posted_at >= NOW() - INTERVAL '${filters.posted_within} days'`);
   }
 
   const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';

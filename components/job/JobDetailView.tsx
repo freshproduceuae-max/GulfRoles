@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Button from '@/components/ui/Button';
 import ApplyModal from '@/components/seeker/ApplyModal';
 import AdSlot from '@/components/monetization/AdSlot';
@@ -43,6 +43,38 @@ const PARTNER_NAMES: Record<string, string> = {
   remoteok: 'Remote OK',
   remotive: 'Remotive',
 };
+
+function SaveJobButton({ jobId }: { jobId: string }) {
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem('savedJobs');
+      const ids = raw ? (JSON.parse(raw) as string[]) : [];
+      setSaved(Array.isArray(ids) && ids.includes(jobId));
+    } catch {
+      setSaved(false);
+    }
+  }, [jobId]);
+
+  function toggle() {
+    const raw = window.localStorage.getItem('savedJobs');
+    const ids = raw ? (JSON.parse(raw) as string[]) : [];
+    const next = saved ? ids.filter((id) => id !== jobId) : [...ids, jobId];
+    window.localStorage.setItem('savedJobs', JSON.stringify(next));
+    setSaved(!saved);
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      className="inline-flex items-center justify-center rounded-lg border border-gray-300 px-6 py-3 font-medium text-gray-900"
+    >
+      {saved ? 'Saved' : 'Save job'}
+    </button>
+  );
+}
 
 export default function JobDetailView({ job }: { job: JobDetailProps }) {
   const [showApplyModal, setShowApplyModal] = useState(false);
@@ -125,16 +157,22 @@ export default function JobDetailView({ job }: { job: JobDetailProps }) {
             )}
 
             {partner ? (
-              <a
-                href={`/api/affiliate/click?job=${encodeURIComponent(job.id)}`}
-                className="inline-flex items-center justify-center rounded-lg bg-primary-500 px-6 py-3 font-medium text-white hover:bg-primary-600"
-              >
-                Continue to {partnerName}
-              </a>
+              <div className="flex flex-wrap gap-3">
+                <a
+                  href={`/api/affiliate/click?job=${encodeURIComponent(job.id)}`}
+                  className="inline-flex items-center justify-center rounded-lg bg-primary-500 px-6 py-3 font-medium text-white hover:bg-primary-600"
+                >
+                  Apply on {partnerName}
+                </a>
+                <SaveJobButton jobId={job.id} />
+              </div>
             ) : (
-              <Button variant="primary" size="lg" onClick={() => setShowApplyModal(true)}>
-                Apply now
-              </Button>
+              <div className="flex flex-wrap gap-3">
+                <Button variant="primary" size="lg" onClick={() => setShowApplyModal(true)}>
+                  Apply now
+                </Button>
+                <SaveJobButton jobId={job.id} />
+              </div>
             )}
           </div>
 

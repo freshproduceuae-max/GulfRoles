@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, FormEvent, ChangeEvent } from 'react';
+import { useState, FormEvent, ChangeEvent, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 
@@ -22,10 +22,11 @@ export default function LoginForm() {
   const callbackUrl = searchParams.get('callbackUrl') || '/admin';
   const errorParam = searchParams.get('error');
 
-  // Show error from URL if redirected due to auth failure
-  if (errorParam && !error) {
-    setError('Invalid credentials. Please try again.');
-  }
+  useEffect(() => {
+    if (errorParam) {
+      setError('Invalid credentials. Please try again.');
+    }
+  }, [errorParam]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

@@ -9,6 +9,7 @@ export default function HomeSearch({ regionDb, regionLabel }: { regionDb?: strin
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [location, setLocation] = useState('');
+  const [country, setCountry] = useState(regionDb || '');
   const [isSearching, setIsSearching] = useState(false);
 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
@@ -17,7 +18,7 @@ export default function HomeSearch({ regionDb, regionLabel }: { regionDb?: strin
     const params = new URLSearchParams();
     if (searchTerm) params.set('q', searchTerm);
     if (location) params.set('location', location);
-    if (regionDb) params.set('region', regionDb);
+    if (country) params.set('region', country);
     router.push(`/search?${params.toString()}`);
   }
 
@@ -41,12 +42,27 @@ export default function HomeSearch({ regionDb, regionLabel }: { regionDb?: strin
           />
           <Input
             type="text"
-            placeholder="Location"
+            placeholder="City or region"
             value={location}
             onChange={(event) => setLocation(event.target.value)}
             className="flex-1"
             aria-label="Location"
           />
+          <label className="sr-only" htmlFor="home-country">Country</label>
+          <select
+            id="home-country"
+            aria-label="Country"
+            value={country}
+            onChange={(event) => setCountry(event.target.value)}
+            className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900"
+          >
+            <option value="">Any country</option>
+            <option value="UAE">UAE</option>
+            <option value="Saudi">Saudi Arabia</option>
+            <option value="India">India</option>
+            <option value="Australia">Australia</option>
+            <option value="USA">United States</option>
+          </select>
           <Button variant="primary" size="md" type="submit" loading={isSearching} className="sm:w-auto">
             Search
           </Button>
