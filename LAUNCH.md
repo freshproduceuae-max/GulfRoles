@@ -1,22 +1,18 @@
 # Launch JobBrowser
 
-The app builds and the MVP flows are in the code. It does not go live, and it does not earn anything, until you do the steps below. This agent did not change the Vercel project, the domain, or any secret.
+The app builds and the MVP flows are in the code. It does not earn anything until the affiliate keys and the `jobbrowser.app` domain are finished. This agent did not change the Vercel project or the domain.
 
-Live site today: https://jobbrowser.vercel.app still points `DATABASE_URL` at localhost, so search returns a connection error. https://jobbrowser.app did not complete a TLS handshake when it was checked on 24 Nov 2026.
+Neon (Singapore) is already connected to the Vercel project. `DATABASE_URL` is the pooled URL the site uses. `DATABASE_URL_UNPOOLED` is the direct URL. `npm run build` applies migrations with the direct URL when one of those is present, then builds. It does not insert demo jobs. A second build skips migrations that are already recorded.
 
-## 1. Create the database
+## 1. Database
 
-1. Create a free Postgres database. [Neon](https://neon.tech) is enough. Vercel Postgres or Supabase work too, as long as you get a normal `postgresql://` URL.
-2. Copy the connection string. It should include the host, database, user, password, and `sslmode=require`.
-3. On your computer, in this repo, put that URL only in `.env.local` (that file is gitignored):
+The tables are created on the next Vercel build after this branch is merged. You can also apply them from your computer:
 
-   ```bash
-   DATABASE_URL="postgresql://USER:PASSWORD@HOST/neondb?sslmode=require"
-   npm run migrate
-   ```
+```bash
+DATABASE_URL="postgresql://…pooler…" DATABASE_URL_UNPOOLED="postgresql://…direct…" npm run migrate
+```
 
-4. `npm run migrate` applies `db/migrations/001_init_schema.sql`, `002_add_affiliate_tracking.sql`, `003_ingestion_featured_resumes.sql`, and `004_source_policy.sql`. It records what it has applied and can be run again safely.
-5. Do not run `npm run seed` or `npm run seed:production` against this database. Those scripts can insert labeled demo jobs. Real listings come from the feeds.
+Migrations are `db/migrations/001_init_schema.sql` through `004_source_policy.sql`. Do not run `npm run seed` or `npm run seed:production` against Neon.
 
 ## 2. Set environment variables in Vercel
 
@@ -26,7 +22,8 @@ Generate secrets with `openssl rand -base64 32`.
 
 | Name | Required now | What to put |
 | --- | --- | --- |
-| `DATABASE_URL` | Yes | The hosted Postgres URL from step 1. Replace the localhost value. |
+| `DATABASE_URL` | Already set | Pooled Neon URL. Leave the injected value. Do not point it at localhost. |
+| `DATABASE_URL_UNPOOLED` | Already set | Direct Neon URL. Migrations prefer this. Do not use it as the runtime URL. |
 | `NEXTAUTH_SECRET` | Yes | A long random string. |
 | `NEXTAUTH_URL` | Yes | `https://jobbrowser.app` after the domain works. Until then, `https://jobbrowser.vercel.app`. |
 | `ADMIN_EMAIL` | Yes | The email you will use at `/admin/login`. |
@@ -47,7 +44,9 @@ Generate secrets with `openssl rand -base64 32`.
 
 Every name is also listed in `.env.example`.
 
-After saving the variables, redeploy the project from the Vercel dashboard so the new values are picked up. Confirm `https://jobbrowser.vercel.app/api/health` returns `"database": "connected"`.
+Remove the manually set `NODE_ENV`. Vercel already sets it: `production` for the build and for production runtime. A hand-set value overrides that for every environment. If it is not exactly `production`, the build and the live site misbehave. If it is `production`, it is redundant and still overrides Preview.
+
+After this branch is merged, open the deployment and confirm `https://jobbrowser.vercel.app/api/health` returns `"database": "connected"`.
 
 ## 3. Apply for the affiliate accounts
 

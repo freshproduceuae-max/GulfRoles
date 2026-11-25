@@ -148,7 +148,9 @@ These were made while finishing the code against the locked MVP. They do not cha
 
 ### Database
 
-**Choice:** Any hosted Postgres behind `DATABASE_URL` (Neon, Vercel Postgres, or Supabase). SSL is turned on unless the host is localhost.
+**Choice:** Neon. Runtime uses the pooled `DATABASE_URL`. Migrations use `DATABASE_URL_UNPOOLED` and run at the start of `npm run build`. SSL is on unless the host is localhost. Demo jobs are never part of that step.
+
+**Rationale:** Serverless functions should not open a direct connection per request. DDL through PgBouncer is unreliable. The Vercel project already injects both URLs.
 
 **Rationale:** The free Vercel project does not include a database. The July deployment pointed at `127.0.0.1:5432`.
 

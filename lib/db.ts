@@ -4,7 +4,7 @@ import { Pool, PoolClient, QueryResult, QueryConfig, QueryResultRow } from 'pg';
 let pool: Pool | null = null;
 
 export function isDatabaseConfigured(): boolean {
-  return Boolean(process.env.DATABASE_URL);
+  return Boolean(process.env.DATABASE_URL || process.env.POSTGRES_URL);
 }
 
 /**
@@ -36,19 +36,35 @@ export function poolConfig(databaseUrl: string): {
 /**
  * Get or create the PostgreSQL connection pool
  */
+/**
+ * Runtime uses the pooled Neon URL (DATABASE_URL).
+ * Migrations use the direct URL so DDL is not sent through PgBouncer.
+ */
+export function migrationDatabaseUrl(): string | undefined {
+  return (
+    process.env.DATABASE_URL_UNPOOLED ||
+    process.env.POSTGRES_URL_NON_POOLING ||
+    process.env.DATABASE_URL ||
+    process.env.POSTGRES_URL
+  );
+}
+
 function getPool(): Pool {
   if (!pool) {
-    const databaseUrl = process.env.DATABASE_URL;
+    const databaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
 
     if (!databaseUrl) {
       throw new Error('DATABASE_URL environment variable is not set');
     }
 
     const config = poolConfig(databaseUrl);
+    const serverless = Boolean(process.env.VERCEL);
     pool = new Pool({
       connectionString: config.connectionString,
       ssl: config.ssl,
-      connectionTimeoutMillis: 5000,
+      max: serverless ? 1 : 10,
+      idleTimeoutMillis: serverless ? 5000 : 30000,
+      connectionTimeoutMillis: 10000,
     });
 
     pool.on('error', (err: Error) => {
