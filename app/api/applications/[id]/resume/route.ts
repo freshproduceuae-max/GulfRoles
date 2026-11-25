@@ -40,11 +40,12 @@ export async function GET(
     }
 
     const filename = (file.filename || row.resume_filename || 'cv').replace(/["\r\n]/g, '');
+    const inline = request.nextUrl.searchParams.get('inline') === '1' && file.contentType === 'application/pdf';
     return new NextResponse(new Uint8Array(file.bytes), {
       status: 200,
       headers: {
         'Content-Type': file.contentType || row.resume_content_type || 'application/octet-stream',
-        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Content-Disposition': `${inline ? 'inline' : 'attachment'}; filename="${filename}"`,
         'Cache-Control': 'private, no-store',
         'X-Content-Type-Options': 'nosniff',
       },

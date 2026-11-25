@@ -13,7 +13,11 @@ interface ApplicationRow {
   resume_url: string | null;
   resume_filename: string | null;
   cover_letter: string | null;
-  status: 'submitted' | 'viewed' | 'shortlisted' | 'rejected' | 'hired';
+  knockout: boolean;
+  rating: number | null;
+  applicant_location: string | null;
+  experience_years: number | null;
+  status: 'new' | 'reviewed' | 'shortlisted' | 'interview' | 'offer' | 'hired' | 'rejected';
   created_at: string;
   updated_at: string;
 }
@@ -38,7 +42,8 @@ export default async function InboxPage({ params }: { params: { jobId: string } 
 
   const applications = await query<ApplicationRow>(
     `SELECT id, applicant_name, applicant_email, applicant_phone,
-            resume_url, resume_filename, cover_letter, status, created_at, updated_at
+            resume_url, resume_filename, cover_letter, status, knockout, rating,
+            applicant_location, experience_years, created_at, updated_at
      FROM applications
      WHERE job_id = $1
      ORDER BY created_at DESC`,

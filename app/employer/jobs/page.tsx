@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import JobActions from '@/components/employer/JobActions';
 import { readEmployerSession } from '@/lib/access';
 import { query } from '@/lib/db';
 
@@ -58,23 +59,21 @@ export default async function EmployerJobsPage() {
             {result.rows.map((job) => {
               const count = Number(job.applicant_count) || 0;
               return (
-                <li key={job.id}>
-                  <Link
-                    href={`/employer/inbox/${job.id}`}
-                    className="block bg-white rounded-lg shadow px-5 py-4 hover:ring-2 hover:ring-primary-500"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <h2 className="text-lg font-semibold text-gray-900">{job.title}</h2>
-                        <p className="text-sm text-gray-700 mt-1">
-                          {job.location} · {job.status}
-                        </p>
-                      </div>
-                      <p className="text-right text-lg font-bold text-gray-900">
-                        {count === 1 ? '1 applicant' : `${count} applicants`}
+                <li key={job.id} className="bg-white rounded-lg shadow px-5 py-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h2 className="text-lg font-semibold text-gray-900">
+                        <Link href={`/employer/inbox/${job.id}`} className="underline">{job.title}</Link>
+                      </h2>
+                      <p className="text-sm text-gray-700 mt-1">
+                        {job.location} · {job.status}
                       </p>
+                      <JobActions jobId={job.id} status={job.status} />
                     </div>
-                  </Link>
+                    <p className="text-right text-lg font-bold text-gray-900">
+                      {count === 1 ? '1 applicant' : `${count} applicants`}
+                    </p>
+                  </div>
                 </li>
               );
             })}

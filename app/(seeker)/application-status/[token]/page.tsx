@@ -10,9 +10,13 @@ export const metadata: Metadata = {
 };
 
 const STATUS_LABEL: Record<string, string> = {
-  submitted: 'Submitted',
-  viewed: 'Viewed by the employer',
+  new: 'New',
+  submitted: 'New',
+  reviewed: 'Reviewed',
+  viewed: 'Reviewed',
   shortlisted: 'Shortlisted',
+  interview: 'Interview',
+  offer: 'Offer',
   rejected: 'Not moving forward',
   hired: 'Hired',
 };

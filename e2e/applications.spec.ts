@@ -74,12 +74,12 @@ test('employer posts, candidate applies with a CV, employer downloads it', async
   const status = page.getByRole('link', { name: 'Check application status' });
   await expect(status).toBeVisible();
   await status.click();
-  await expect(page.getByText('Submitted')).toBeVisible();
+  await expect(page.getByText('New', { exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Application status' })).toBeVisible();
   await shot('application-status');
 
   await page.goto('/employer/jobs');
-  await expect(page.getByRole('link', { name: new RegExp(title) })).toContainText('1 applicant');
+  await expect(page.getByRole('listitem').filter({ hasText: title })).toContainText('1 applicant');
   await shot('employer-jobs');
   await page.getByRole('link', { name: new RegExp(title) }).click();
   await expect(page.getByRole('heading', { name: title })).toBeVisible();

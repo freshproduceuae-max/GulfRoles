@@ -12,6 +12,9 @@ import {
   generateCandidateConfirmationEmail,
 } from '@/lib/email';
 import { appBaseUrl } from '@/lib/site';
+import { evaluateScreening, type ScreeningQuestion } from '@/lib/employer/screening';
+import { extractResumeText } from '@/lib/resume-text';
+import { writeEvent } from '@/lib/employer/jobs';
 
 const APPLICATION_COLUMNS = `
   id, job_id, applicant_name, applicant_email, applicant_phone,
@@ -123,7 +126,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     const resumeBuffer = Buffer.from(await resumeFile.arrayBuffer());
-    let resumeMeta: { filename: string; contentType: string };
+    let resumeMeta: { filename: string; contentType: string; extension: '.pdf' | '.docx' };
     try {
       resumeMeta = validateResume(resumeBuffer, resumeFile.name);
     } catch (uploadError) {
@@ -131,13 +134,59 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: errorMessage }, { status: 400 });
     }
 
+    const questionRows = await query<{
+      id: string;
+      prompt: string;
+      answer_type: 'yes_no' | 'number' | 'text';
+      required: boolean;
+      knockout: boolean;
+      expected_yes: boolean | null;
+      min_number: number | null;
+    }>(
+      `SELECT id, prompt, answer_type, required, knockout, expected_yes, min_number
+       FROM screening_questions WHERE job_id = $1 ORDER BY position`,
+      [jobId]
+    );
+    let answerMap: Record<string, string> = {};
+    const answersRaw = formData.get('answers');
+    if (typeof answersRaw === 'string' && answersRaw) {
+      try {
+        const parsed = JSON.parse(answersRaw) as Record<string, string>;
+        answerMap = parsed && typeof parsed === 'object' ? parsed : {};
+      } catch {
+        return NextResponse.json({ error: 'Screening answers were not readable' }, { status: 400 });
+      }
+    }
+    const questions: ScreeningQuestion[] = questionRows.rows.map((row) => ({
+      id: row.id,
+      prompt: row.prompt,
+      answerType: row.answer_type,
+      required: row.required,
+      knockout: row.knockout,
+      expectedYes: row.expected_yes,
+      minNumber: row.min_number,
+    }));
+    let screening: { results: { questionId: string; prompt: string; answerText: string; knockedOut: boolean }[]; knockout: boolean };
+    try {
+      screening = evaluateScreening(questions, answerMap);
+    } catch (screenError) {
+      const message = screenError instanceof Error ? screenError.message : 'Answer the screening questions';
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+    const resumeText = extractResumeText(resumeBuffer, resumeMeta.extension);
+    const location = String(formData.get('applicant_location') || '').trim().slice(0, 255) || null;
+    const experienceRaw = String(formData.get('experience_years') || '').trim();
+    const experience = experienceRaw ? Number(experienceRaw) : null;
+    const skills = String(formData.get('skills') || '').trim().slice(0, 500) || null;
+
     const statusToken = randomUUID();
     const applicationResult = await query<{ id: string }>(
       `INSERT INTO applications (
         job_id, applicant_name, applicant_email, applicant_phone,
         resume_filename, resume_content_type, cover_letter,
-        status, status_token, created_at, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'submitted', $8, NOW(), NOW())
+        status, status_token, applicant_location, experience_years, skills,
+        resume_text, knockout, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'new', $8, $9, $10, $11, $12, $13, NOW(), NOW())
       RETURNING id`,
       [
         jobId,
@@ -148,6 +197,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         resumeMeta.contentType,
         validationData.cover_letter || null,
         statusToken,
+        location,
+        Number.isFinite(experience) ? experience : null,
+        skills,
+        resumeText || null,
+        screening.knockout,
       ]
     );
 
@@ -155,6 +209,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (!applicationId) {
       return NextResponse.json({ error: 'Failed to create application' }, { status: 500 });
     }
+
+    for (const result of screening.results) {
+      if (!result.answerText) continue;
+      await query(
+        `INSERT INTO screening_answers (application_id, question_id, prompt, answer_text, knocked_out)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [applicationId, result.questionId, result.prompt, result.answerText, result.knockedOut]
+      );
+    }
+    await writeEvent(
+      applicationId,
+      'applied',
+      screening.knockout ? 'Applied. A screening answer missed a must-have.' : 'Applied',
+      validationData.applicant_email
+    );
 
     const storage = resumeStorageFromEnv();
     await storage.put({

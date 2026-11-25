@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, FormEvent, ChangeEvent } from 'react';
+import { useEffect, useState, FormEvent, ChangeEvent } from 'react';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -24,6 +24,15 @@ export default function ApplyModal({ jobId, jobTitle, onClose }: ApplyModalProps
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [statusPath, setStatusPath] = useState<string | null>(null);
+  const [questions, setQuestions] = useState<{ id: string; prompt: string; answer_type: string; required: boolean }[]>([]);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    void fetch(`/api/jobs/${jobId}/questions`)
+      .then((response) => response.json())
+      .then((data) => setQuestions(Array.isArray(data.questions) ? data.questions : []))
+      .catch(() => setQuestions([]));
+  }, [jobId]);
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -82,6 +91,13 @@ export default function ApplyModal({ jobId, jobTitle, onClose }: ApplyModalProps
       if (formData.cover_letter) {
         formDataToSend.append('cover_letter', formData.cover_letter);
       }
+      const location = (document.getElementById('applicant_location') as HTMLInputElement | null)?.value;
+      const experience = (document.getElementById('experience_years') as HTMLInputElement | null)?.value;
+      const skills = (document.getElementById('skills') as HTMLInputElement | null)?.value;
+      if (location) formDataToSend.append('applicant_location', location);
+      if (experience) formDataToSend.append('experience_years', experience);
+      if (skills) formDataToSend.append('skills', skills);
+      if (questions.length > 0) formDataToSend.append('answers', JSON.stringify(answers));
       formDataToSend.append('resume', resumeFile);
 
       // Submit application
@@ -217,6 +233,35 @@ export default function ApplyModal({ jobId, jobTitle, onClose }: ApplyModalProps
             </label>
           </div>
         </div>
+
+        <div>
+          <label htmlFor="applicant_location" className="block text-sm font-medium text-gray-900 dark:text-white mb-1">City</label>
+          <Input id="applicant_location" name="applicant_location" placeholder="Dubai" />
+        </div>
+        <div>
+          <label htmlFor="experience_years" className="block text-sm font-medium text-gray-900 dark:text-white mb-1">Years of experience</label>
+          <Input id="experience_years" name="experience_years" type="number" min="0" />
+        </div>
+        <div>
+          <label htmlFor="skills" className="block text-sm font-medium text-gray-900 dark:text-white mb-1">Skills</label>
+          <Input id="skills" name="skills" placeholder="nursing, ward" />
+        </div>
+        {questions.map((question) => (
+          <div key={question.id}>
+            <label htmlFor={`q-${question.id}`} className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
+              {question.prompt}{question.required ? ' *' : ''}
+            </label>
+            {question.answer_type === 'yes_no' ? (
+              <select id={`q-${question.id}`} className="w-full border rounded px-3 py-2" value={answers[question.id] || ''} onChange={(event) => setAnswers({ ...answers, [question.id]: event.target.value })}>
+                <option value="">Choose</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
+            ) : (
+              <Input id={`q-${question.id}`} value={answers[question.id] || ''} onChange={(event) => setAnswers({ ...answers, [question.id]: event.target.value })} />
+            )}
+          </div>
+        ))}
 
         <div>
           <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
