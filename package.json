@@ -10,7 +10,7 @@
     "type-check": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
     "test:e2e": "playwright test",
-    "migrate": "tsx scripts/migrate.ts",
+    "migrate": "RUN_MIGRATIONS=true tsx scripts/migrate.ts",
     "ingest": "tsx scripts/ingest.ts",
     "seed": "tsx db/seed.ts",
     "seed:production": "NODE_ENV=production tsx db/seed-production.ts"

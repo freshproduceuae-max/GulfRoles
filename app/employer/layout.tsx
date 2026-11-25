@@ -1,14 +1,23 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { ReactNode } from 'react';
 import { readEmployerSession } from '@/lib/access';
+import { isPublicEmployerPath } from '@/lib/employer/paths';
+
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
 export default async function EmployerLayout({ children }: { children: ReactNode }) {
+  const pathname = headers().get('x-pathname') || '';
   const session = await readEmployerSession();
+  if (!isPublicEmployerPath(pathname) && !session) {
+    redirect('/employer/login');
+  }
   return (
     <div>
       {session ? (

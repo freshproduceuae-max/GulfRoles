@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { Pool } from 'pg';
 import { migrationDatabaseUrl, poolConfig } from '../lib/db';
+import { shouldRunMigrations } from '../lib/migrations/policy';
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 dotenv.config();
@@ -13,6 +14,13 @@ dotenv.config();
  * Does not insert sample jobs.
  */
 async function main() {
+  if (!shouldRunMigrations()) {
+    console.log(
+      'Skipping migrations. Preview and local builds do not change the shared database. Production (VERCEL_ENV=production) runs them. Set RUN_MIGRATIONS=true to apply them on purpose.'
+    );
+    return;
+  }
+
   const databaseUrl = migrationDatabaseUrl();
   if (!databaseUrl) {
     const required = process.env.npm_lifecycle_event === 'migrate';

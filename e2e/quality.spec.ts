@@ -46,7 +46,7 @@ test('internal routes answer and linked pages are not 404', async ({ page, reque
 
 test('search, job view, save, and apply redirect', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('main').getByLabel('Job title or keyword').fill('nurse');
+  await page.getByRole('main').getByLabel('Job title or keyword').fill('Ward nurse');
   await page.getByRole('main').getByLabel('Location').fill('Dubai');
   await page.getByRole('main').getByLabel('Country').selectOption('UAE');
   await page.getByRole('main').getByRole('button', { name: 'Search' }).click();
@@ -59,7 +59,7 @@ test('search, job view, save, and apply redirect', async ({ page }) => {
   await page.getByRole('button', { name: 'Save job' }).click();
   await page.goto('/saved');
   await expect(page.getByRole('heading', { name: 'Ward nurse' })).toBeVisible();
-  await page.goto('/search?q=nurse');
+  await page.goto('/search?q=Ward%20nurse');
   await page.getByRole('link', { name: /Ward nurse/ }).first().click();
   const popup = page.waitForURL(/example\.com|careerjet|\/api\/affiliate/);
   await page.getByRole('link', { name: /Apply on/ }).click();

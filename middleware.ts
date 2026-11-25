@@ -3,6 +3,12 @@ import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { isSitePublic } from '@/lib/site';
 
+function continueWithPath(request: NextRequest): NextResponse {
+  const headers = new Headers(request.headers);
+  headers.set('x-pathname', request.nextUrl.pathname);
+  return withRobots(NextResponse.next({ request: { headers } }), request.nextUrl.pathname);
+}
+
 function withRobots(response: NextResponse, pathname: string): NextResponse {
   const privateArea =
     pathname.startsWith('/admin') ||
@@ -28,7 +34,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  return withRobots(NextResponse.next(), pathname);
+  return continueWithPath(request);
 }
 
 export const config = {
