@@ -377,6 +377,7 @@ export interface SendEmailOptions {
   subject: string;
   html: string;
   text?: string;
+  attachments?: { filename: string; type: string; content: string }[];
 }
 
 export async function sendEmail({
@@ -384,6 +385,7 @@ export async function sendEmail({
   subject,
   html,
   text,
+  attachments,
 }: SendEmailOptions): Promise<{ success: boolean; messageId?: string; error?: string }> {
   if (!process.env.SENDGRID_API_KEY) {
     return { success: false, error: 'Email service not configured' };
@@ -414,6 +416,16 @@ export async function sendEmail({
           },
           ...(text ? [{ type: 'text/plain', value: text }] : []),
         ],
+        ...(attachments?.length
+          ? {
+              attachments: attachments.map((file) => ({
+                filename: file.filename,
+                type: file.type,
+                content: file.content,
+                disposition: 'attachment',
+              })),
+            }
+          : {}),
       }),
     });
 

@@ -12,7 +12,7 @@ The tables are created on the next Vercel build after this branch is merged. You
 DATABASE_URL="postgresql://…pooler…" DATABASE_URL_UNPOOLED="postgresql://…direct…" npm run migrate
 ```
 
-Migrations are `db/migrations/001_init_schema.sql` through `006_recruiter_workspace.sql`. Do not run `npm run seed` or `npm run seed:production` against Neon.
+Migrations are `db/migrations/001_init_schema.sql` through `007_sourcing_team_analytics.sql`. Do not run `npm run seed` or `npm run seed:production` against Neon.
 
 `npm run build` runs `tsx scripts/migrate.ts` before `next build`. `tsx` is a production dependency, so the migrate step still runs if `NODE_ENV=production` causes npm to skip devDependencies.
 

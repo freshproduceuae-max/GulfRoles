@@ -9,6 +9,9 @@ const PRIVATE_PAGES = [
   '/employer/inbox/00000000-0000-0000-0000-000000000001',
   '/employer/jobs/00000000-0000-0000-0000-000000000001/edit',
   '/employer/applicants/00000000-0000-0000-0000-000000000001',
+  '/employer/candidates',
+  '/employer/analytics',
+  '/employer/team',
 ];
 
 const PRIVATE_APIS = [
@@ -25,6 +28,14 @@ const PRIVATE_APIS = [
   ['POST', '/api/employer/pipeline'],
   ['GET', '/api/employer/applicants/00000000-0000-0000-0000-000000000001'],
   ['PATCH', '/api/employer/applicants/00000000-0000-0000-0000-000000000001'],
+  ['GET', '/api/employer/candidates'],
+  ['POST', '/api/employer/candidates/invite'],
+  ['GET', '/api/employer/saved-searches'],
+  ['POST', '/api/employer/saved-searches'],
+  ['POST', '/api/employer/interviews'],
+  ['GET', '/api/employer/analytics'],
+  ['GET', '/api/employer/team'],
+  ['POST', '/api/employer/team'],
 ];
 
 test('signed-out employer pages redirect and employer APIs return 401', async ({ page, request }) => {

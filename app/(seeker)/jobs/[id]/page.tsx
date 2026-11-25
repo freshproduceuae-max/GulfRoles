@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import JobDetailView from '@/components/job/JobDetailView';
 import { buildJobPostingJsonLd, serializeJsonLd } from '@/lib/jsonld';
 import { getJobById, isPublicListing } from '@/lib/jobs';
+import { query } from '@/lib/db';
 import { appBaseUrl } from '@/lib/site';
 import { regionByDb } from '@/lib/regions';
 
@@ -45,6 +46,7 @@ export default async function JobPage({ params }: { params: { id: string } }) {
   }
 
   if (!job || !isPublicListing(job)) notFound();
+  await query(`UPDATE jobs SET view_count = view_count + 1 WHERE id = $1`, [job.id]).catch(() => undefined);
 
   const region = regionByDb(job.region);
   const jsonLd = buildJobPostingJsonLd({
