@@ -1,0 +1,141 @@
+# Launch JobBrowser
+
+The app builds and the MVP flows are in the code. It does not earn anything until the affiliate keys and the `jobbrowser.app` domain are finished. This agent did not change the Vercel project or the domain.
+
+Neon (Singapore) is already connected to the Vercel project. `DATABASE_URL` is the pooled URL the site uses. `DATABASE_URL_UNPOOLED` is the direct URL. `npm run build` applies migrations with the direct URL when one of those is present, then builds. It does not insert demo jobs. A second build skips migrations that are already recorded.
+
+## 1. Database
+
+The tables are created on the next Vercel build after this branch is merged. You can also apply them from your computer:
+
+```bash
+DATABASE_URL="postgresql://…pooler…" DATABASE_URL_UNPOOLED="postgresql://…direct…" npm run migrate
+```
+
+Migrations are `db/migrations/001_init_schema.sql` through `004_source_policy.sql`. Do not run `npm run seed` or `npm run seed:production` against Neon.
+
+## 2. Set environment variables in Vercel
+
+Vercel dashboard → the JobBrowser project → Settings → Environment Variables. Set them for Production. Do not put them in git.
+
+Generate secrets with `openssl rand -base64 32`.
+
+| Name | Required now | What to put |
+| --- | --- | --- |
+| `DATABASE_URL` | Already set | Pooled Neon URL. Leave the injected value. Do not point it at localhost. |
+| `DATABASE_URL_UNPOOLED` | Already set | Direct Neon URL. Migrations prefer this. Do not use it as the runtime URL. |
+| `NEXTAUTH_SECRET` | Yes | A long random string. |
+| `NEXTAUTH_URL` | Yes | `https://jobbrowser.app` after the domain works. Until then, `https://jobbrowser.vercel.app`. |
+| `ADMIN_EMAIL` | Yes | The email you will use at `/admin/login`. |
+| `ADMIN_PASSWORD` | Yes | A password you choose. It is not in the source code. |
+| `CRON_SECRET` | Yes | A long random string. Vercel Cron sends it as `Authorization: Bearer …`. |
+| `NEXT_PUBLIC_APP_NAME` | Yes | `JobBrowser` |
+| `NEXT_PUBLIC_APP_BASE_URL` | Yes | `https://jobbrowser.app` (or the vercel.app URL until the domain works). |
+| `NEXT_PUBLIC_API_BASE_URL` | Yes | That same origin plus `/api`. |
+| `NEXT_PUBLIC_CONTACT_EMAIL` | Yes | The inbox you actually read. |
+| `SENDGRID_API_KEY` | For email | SendGrid API key. Without it, alerts, employer links, and application emails do not send. The site still loads. |
+| `SENDGRID_FROM_EMAIL` | For email | A sender on a domain you verify in SendGrid, such as `noreply@jobbrowser.app`. |
+| `CAREERJET_AFFILIATE_ID` | For Careerjet jobs and clicks | Publisher id from Careerjet. `CAREERJET_API_KEY` is accepted as the same value. |
+| `CAREERJET_USER_IP` | For Careerjet ingestion | The IP Careerjet tells you to send with server-side queries. |
+| `JOOBLE_API_KEY` | For Jooble jobs | Key from the Jooble publisher API. |
+| `ADZUNA_APP_ID` and `ADZUNA_APP_KEY` | For Adzuna jobs | Adzuna covers India, Australia, and the US only. There is no UAE or Saudi feed. |
+| `SENTRY_DSN` and `NEXT_PUBLIC_SENTRY_DSN` | Optional | From a Sentry project, when you want error monitoring. |
+| `NEXT_PUBLIC_ADSENSE_CLIENT` and `NEXT_PUBLIC_ADSENSE_SLOT_HOME`, `NEXT_PUBLIC_ADSENSE_SLOT_SEARCH`, `NEXT_PUBLIC_ADSENSE_SLOT_JOB` | Later | Leave blank. See section 7. |
+
+Every name is also listed in `.env.example`.
+
+Remove the manually set `NODE_ENV`. Vercel already sets it: `production` for the build and for production runtime. A hand-set value overrides that for every environment. If it is not exactly `production`, the build and the live site misbehave. If it is `production`, it is redundant and still overrides Preview.
+
+After this branch is merged, open the deployment and confirm `https://jobbrowser.vercel.app/api/health` returns `"database": "connected"`.
+
+## 3. Apply for the affiliate accounts
+
+The ingestion code calls official publisher APIs and public ATS boards. It does not scrape boards. Indeed, Glassdoor, LinkedIn, and GulfTalent are blocked even if a URL shows up in a feed.
+
+1. **Careerjet, Jooble, and Adzuna** stay the first CPC partners. Apply the same week to Talent.com, WhatJobs, Jobtome, JobRapido, and Jobg8 if you want more than one payout stream. Do not turn on `JobPosting` markup for those partners until the contract says Google for Jobs is allowed. The code leaves it off.
+2. **Remote OK and Remotive** are on by default (`LEGAL_FEEDS=remoteok,remotive`). Remotive jobs are stored with attribution and **without** Google JobPosting markup. Set `LEGAL_FEEDS=none` to skip them. Do not send Remotive jobs onward to Jooble or another board.
+3. **Employer career boards.** After the magic-link sign-in, the employer opens `/employer/sources` and enters a public Greenhouse, Lever, Ashby, or Workable board name. The next `/api/cron/daily` run indexes roles whose location matches the region they picked. There is no fee and no recruitment seat.
+4. **Clicks.** `/admin/revenue` groups clicks by source. Dollar figures there are estimates for the three CPC partners only.
+
+Careerjet still needs `CAREERJET_AFFILIATE_ID` and the `CAREERJET_USER_IP` they approve. Jooble needs `JOOBLE_API_KEY`. Adzuna needs `ADZUNA_APP_ID` and `ADZUNA_APP_KEY`, and only covers India, Australia, and the US.
+
+When those keys are in `.env.local` and `DATABASE_URL` points at the hosted database, pull a first partner batch from your computer (this is not limited by the Vercel cron timeout):
+
+```bash
+npm run ingest -- --slots=40
+```
+
+Repeat until `/api/jobs` shows a useful catalogue. One slot is one keyword in one country, across every configured source. The daily cron continues the rotation with one slot so it stays inside the free-tier function time.
+
+Check a count in the Neon SQL editor:
+
+```sql
+SELECT source, COUNT(*) FROM jobs WHERE status = 'published' GROUP BY source;
+```
+
+The “1,000 indexed jobs” launch target is this step. The code cannot meet it without the keys.
+
+## 4. Fix jobbrowser.app
+
+1. In Vercel, add `jobbrowser.app` as a domain on this project. Do not remove the `vercel.app` URL until the custom domain loads.
+2. At the registrar, set the DNS records Vercel shows you (usually an A record and a `www` CNAME, or the nameservers Vercel gives you).
+3. Wait until Vercel says the certificate is ready and `https://jobbrowser.app` loads the same site.
+4. Set `NEXTAUTH_URL` and `NEXT_PUBLIC_APP_BASE_URL` to `https://jobbrowser.app`, then redeploy.
+5. `gulfjob.fyi` is the spare domain from the decision log. Leave it parked until you want a Gulf-only front.
+
+## 5. Search Console, email, and admin
+
+1. Open [Google Search Console](https://search.google.com/search-console), add `https://jobbrowser.app`, and verify it with the DNS record Google gives you.
+2. Submit `https://jobbrowser.app/sitemap.xml`. The sitemap lists the static pages, the five regions, and published jobs. `robots.txt` already points at that sitemap.
+3. In SendGrid, authenticate `jobbrowser.app` (SPF and DKIM) before you expect alerts to reach inboxes.
+4. Sign in at `/admin/login` with `ADMIN_EMAIL` and `ADMIN_PASSWORD`. The moderation queue is `/admin/moderation`.
+5. Post a job once, end to end: `/employer/login`, open the email link, finish the 3 steps, then apply as a seeker and open `/employer/inbox/<job id>`. Resumes are stored in Postgres and are not public files.
+
+The daily jobs are declared in `vercel.json`. Hobby can run each of them at most once per day. Vercel’s preview check on this pull request fails in the first second, before the build, because the commits are authored by `cursoragent@cursor.com` and that address is not a member of the Vercel team. Open the failed deployment, allow that author, or merge and redeploy from your own account. Your deploy is the one that registers the schedules.
+
+- `0 5 * * *` → `/api/cron/daily` ingests one keyword/region slot and expires jobs that were not seen for 30 days, or whose `expires_at` has passed.
+- `0 16 * * *` → `/api/cron/send-alerts` sends the weekly digest only to people whose last email was at least 7 days ago.
+
+Both routes return 401 until `CRON_SECRET` is set. Vercel adds the bearer header for you when that variable exists.
+
+## 6. Put your name on the legal pages
+
+`components/content/OperatorNotice.tsx` says the site is operated as a sole proprietorship and gives the contact email. Before you take money (affiliate payouts, AdSense, or featured jobs), edit that paragraph so it includes your legal name and postal address, then update Privacy and Terms if the address should appear there too. This is your notice to readers, not a filing.
+
+## 7. AdSense, later
+
+Leave the AdSense variables empty at launch. No ad code is sent to the browser until `NEXT_PUBLIC_ADSENSE_CLIENT` is set.
+
+When Search Console shows real traffic and Google accepts the site:
+
+1. Apply for AdSense on `jobbrowser.app`.
+2. Create three display units.
+3. Set `NEXT_PUBLIC_ADSENSE_CLIENT` and `NEXT_PUBLIC_ADSENSE_SLOT_HOME`, `NEXT_PUBLIC_ADSENSE_SLOT_SEARCH`, `NEXT_PUBLIC_ADSENSE_SLOT_JOB`.
+4. Redeploy.
+
+The slots are already placed on the homepage, the search results, and the job page. The privacy and cookie pages already say advertising cookies stay off until this is configured.
+
+## 8. Featured listings, later
+
+Employer posts are free. There is no Stripe or Razorpay checkout.
+
+The database has `listing_tier` (`free` or `featured`), `is_featured`, and `featured_until`. Homepage ordering prefers featured jobs. An admin session can set the flag:
+
+`POST /api/admin/listings/feature` with JSON `{ "job_id": "…", "featured": true, "days": 30 }`.
+
+A paid flow can call that same update after a successful payment. Do not charge anyone until that checkout exists and the legal pages name you.
+
+## What this version does not do
+
+These stay out of scope, on purpose:
+
+- Recruiter ATS, resume search, subscriptions, premium seeker tools.
+- Selling or reselling CVs. Applications are visible only to the employer who posted the job, and to you as admin.
+- Arabic or Hindi.
+- Payments.
+
+Lighthouse and a formal WCAG audit were not run in this change. Search Console verification, 1,000 live jobs, and 100 alert subscribers cannot be checked until the steps above are done.
+
+## If your laptop has newer files
+
+This branch starts from commit `b16e687` on `master`. Compare your local project to this branch before you overwrite either side. Demo seed data is still in `db/seed.ts` and is not loaded by migrate.

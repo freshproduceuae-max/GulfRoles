@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-30  
 **Project:** jobbrowser.app  
-**Status:** Production Ready - Ready for Vercel Deployment  
+**Status:** Historical note from 30 July 2026. Launch steps that are still true are in [LAUNCH.md](../LAUNCH.md). The production database was still localhost when this file was written.  
 
 ---
 

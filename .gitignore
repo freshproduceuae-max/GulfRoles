@@ -25,7 +25,9 @@ yarn-error.log*
 .env.debug
 
 # Environment variables
+.env
 .env.local
+.env.production
 .env.*.local
 
 # IDE
@@ -53,3 +55,6 @@ Thumbs.db
 
 # Local testing
 .test/
+test-results/
+playwright-report/
+blob-report/

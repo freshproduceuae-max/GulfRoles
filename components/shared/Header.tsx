@@ -1,10 +1,23 @@
 'use client';
 
-import { useState } from 'react';
+import { FormEvent, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function Header() {
+  const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [title, setTitle] = useState('');
+  const [location, setLocation] = useState('');
+
+  function submitSearch(event: FormEvent) {
+    event.preventDefault();
+    const params = new URLSearchParams();
+    if (title.trim()) params.set('q', title.trim());
+    if (location.trim()) params.set('location', location.trim());
+    router.push(`/search?${params.toString()}`);
+    setIsMenuOpen(false);
+  }
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -32,44 +45,52 @@ export default function Header() {
           </div>
 
           {/* Desktop Search Bar - Centered */}
-          <div className="hidden md:flex flex-1 mx-8 max-w-md">
+          <form onSubmit={submitSearch} className="hidden md:flex flex-1 mx-8 max-w-md">
             <div className="w-full flex gap-2">
               <input
                 type="text"
                 placeholder="Job title"
                 aria-label="Job title search"
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
                 className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
               />
               <input
                 type="text"
                 placeholder="Location"
                 aria-label="Location search"
+                value={location}
+                onChange={(event) => setLocation(event.target.value)}
                 className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
               />
               <button
+                type="submit"
                 className="px-4 py-2 bg-primary-500 text-white text-sm font-medium rounded-lg hover:bg-primary-600 transition"
                 aria-label="Search jobs"
               >
                 Search
               </button>
             </div>
-          </div>
+          </form>
 
           {/* Desktop Action Buttons */}
-          <div className="hidden md:flex items-center space-x-4">
-            <button
-              className="px-4 py-2 text-sm font-medium text-primary-500 border border-primary-500 rounded-lg hover:bg-primary-50 transition"
-              aria-label="Set job alerts"
+          <nav aria-label="Primary" className="hidden md:flex items-center gap-3">
+            <Link href="/search" className="text-sm font-medium text-gray-700 dark:text-gray-200">
+              Find jobs
+            </Link>
+            <Link href="/saved" className="text-sm font-medium text-gray-700 dark:text-gray-200">
+              Saved
+            </Link>
+            <Link href="/#job-alerts" className="text-sm font-medium text-gray-700 dark:text-gray-200">
+              Alerts
+            </Link>
+            <Link
+              href="/employer/post-job"
+              className="px-4 py-2 text-sm font-medium text-white bg-secondary-500 rounded-lg hover:bg-secondary-600"
             >
-              Set Alerts
-            </button>
-            <button
-              className="px-4 py-2 text-sm font-medium text-white bg-secondary-500 rounded-lg hover:bg-secondary-600 transition"
-              aria-label="Post a job"
-            >
-              Post a Job
-            </button>
-          </div>
+              Post a job free
+            </Link>
+          </nav>
 
           {/* Mobile Hamburger Menu Button */}
           <button
@@ -99,41 +120,47 @@ export default function Header() {
         {isMenuOpen && (
           <div className="md:hidden pb-4 space-y-3">
             {/* Mobile Search Bar */}
-            <div className="space-y-2">
+            <form onSubmit={submitSearch} className="space-y-2">
               <input
                 type="text"
                 placeholder="Job title"
                 aria-label="Job title search"
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
                 className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
               />
               <input
                 type="text"
                 placeholder="Location"
                 aria-label="Location search"
+                value={location}
+                onChange={(event) => setLocation(event.target.value)}
                 className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
               />
               <button
+                type="submit"
                 className="w-full px-4 py-2 bg-primary-500 text-white text-sm font-medium rounded-lg hover:bg-primary-600 transition"
-                aria-label="Search jobs"
               >
                 Search
               </button>
-            </div>
+            </form>
 
-            {/* Mobile Action Buttons */}
             <div className="space-y-2">
-              <button
-                className="w-full px-4 py-2 text-sm font-medium text-primary-500 border border-primary-500 rounded-lg hover:bg-primary-50 transition"
-                aria-label="Set job alerts"
+              <Link href="/search" className="block w-full px-4 py-2 text-sm font-medium text-center border rounded-lg">
+                Find jobs
+              </Link>
+              <Link href="/saved" className="block w-full px-4 py-2 text-sm font-medium text-center border rounded-lg">
+                Saved
+              </Link>
+              <Link href="/#job-alerts" className="block w-full px-4 py-2 text-sm font-medium text-center border rounded-lg">
+                Alerts
+              </Link>
+              <Link
+                href="/employer/post-job"
+                className="block w-full px-4 py-2 text-sm font-medium text-center text-white bg-secondary-500 rounded-lg"
               >
-                Set Alerts
-              </button>
-              <button
-                className="w-full px-4 py-2 text-sm font-medium text-white bg-secondary-500 rounded-lg hover:bg-secondary-600 transition"
-                aria-label="Post a job"
-              >
-                Post a Job
-              </button>
+                Post a job free
+              </Link>
             </div>
           </div>
         )}

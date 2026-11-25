@@ -1,13 +1,19 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
+import Script from 'next/script'
 import { Providers } from './providers'
 import './globals.css'
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+}
+
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_BASE_URL || 'https://jobbrowser.app'),
   title: 'JobBrowser - Find Your Next Opportunity',
-  description: 'Aggregate and browse job listings from multiple sources in one place.',
-  keywords: ['jobs', 'careers', 'job search', 'employment'],
-  authors: [{ name: 'JobBrowser Team' }],
-  viewport: 'width=device-width, initial-scale=1',
+  description: 'Search jobs in the UAE, Saudi Arabia, India, Australia, and the United States.',
+  keywords: ['jobs', 'careers', 'job search', 'employment', 'UAE jobs', 'Saudi jobs'],
+  authors: [{ name: 'JobBrowser' }],
   robots: {
     index: true,
     follow: true,
@@ -20,12 +26,12 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: 'https://jobbrowser.app',
+    canonical: '/',
   },
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://jobbrowser.app',
+    url: '/',
     siteName: 'JobBrowser',
   },
 }
@@ -38,6 +44,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
+        {process.env.NEXT_PUBLIC_ADSENSE_CLIENT ? (
+          <Script
+            async
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_ADSENSE_CLIENT}`}
+            crossOrigin="anonymous"
+            strategy="afterInteractive"
+          />
+        ) : null}
         <Providers>
           {children}
         </Providers>

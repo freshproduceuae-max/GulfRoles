@@ -26,11 +26,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </div>
           <div className="flex items-center space-x-4">
             <nav className="hidden sm:flex space-x-6">
-              <a href="#" className="text-sm text-gray-600 hover:text-gray-900 transition">
-                Dashboard
+              <a href="/admin/moderation" className="text-sm text-gray-600 hover:text-gray-900 transition">
+                Moderation
               </a>
-              <a href="#" className="text-sm text-gray-600 hover:text-gray-900 transition">
-                Settings
+              <a href="/admin/revenue" className="text-sm text-gray-600 hover:text-gray-900 transition">
+                Clicks
               </a>
             </nav>
           </div>

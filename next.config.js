@@ -9,7 +9,14 @@ const nextConfig = {
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
   redirects: async () => {
-    return [];
+    return [
+      { source: '/post-job', destination: '/employer/post-job', permanent: false },
+      { source: '/login', destination: '/employer/login', permanent: false },
+      { source: '/employer', destination: '/employer/login', permanent: false },
+      { source: '/inbox/:jobId', destination: '/employer/inbox/:jobId', permanent: false },
+      { source: '/verify/:token', destination: '/employer/verify/:token', permanent: false },
+      { source: '/moderation', destination: '/admin/moderation', permanent: false },
+    ];
   },
   rewrites: async () => {
     return [];
@@ -21,7 +28,7 @@ const nextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, s-maxage=604800, stale-while-revalidate=86400',
+            value: 'public, s-maxage=60, stale-while-revalidate=300',
           },
           {
             key: 'X-Content-Type-Options',
@@ -85,7 +92,14 @@ const nextConfig = {
   },
 };
 
-// Only apply Sentry config if auth token is available
+// Source-map upload needs a real Sentry org token. A blank or placeholder
+// value must not fail the Vercel build. Runtime reporting still uses SENTRY_DSN.
+function sentryTokenIsUsable(token) {
+  if (!token || token.includes('your-auth-token') || token.includes('example')) return false;
+  const parts = token.split('_');
+  return parts[0] === 'sntrys' && parts.length >= 3 && parts[1].length > 16;
+}
+
 const sentryConfig = {
   org: process.env.SENTRY_ORG || 'jobbrowser',
   project: process.env.SENTRY_PROJECT || 'jobbrowser',
@@ -95,8 +109,11 @@ const sentryConfig = {
   releaseHealthSamples: {
     sessionSampleRate: 0.1,
   },
+  errorHandler(err) {
+    console.warn('Sentry build step skipped:', err && err.message ? err.message : err);
+  },
 };
 
-export default process.env.SENTRY_AUTH_TOKEN
+export default sentryTokenIsUsable(process.env.SENTRY_AUTH_TOKEN)
   ? withSentryConfig(nextConfig, sentryConfig)
   : nextConfig;

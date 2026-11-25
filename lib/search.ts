@@ -79,6 +79,10 @@ export interface SearchFilters {
   sort?: 'relevance' | 'salary' | 'posted_date';
   page?: number;
   limit?: number;
+  featured?: boolean;
+  category?: string;
+  posted_within?: number;
+  remote?: boolean;
 }
 
 /**
@@ -133,22 +137,25 @@ export function buildSearchQuery(filters: SearchFilters): {
   whereClause: string;
   params: unknown[];
   paramCount: number;
+  queryParamIndex: number | null;
 } {
   const conditions: string[] = [];
   const params: unknown[] = [];
   let paramCount = 1;
 
-  // Always filter for published jobs only
+  let queryParamIndex: number | null = null;
+
+  // Always filter for published, current jobs
   conditions.push('jobs.status = $' + paramCount);
   params.push('published');
   paramCount++;
+  conditions.push('jobs.deleted_at IS NULL');
+  conditions.push('(jobs.expires_at IS NULL OR jobs.expires_at > NOW())');
 
   // Full-text search on search_vector
   if (filters.q && filters.q.trim().length > 0) {
-    conditions.push('jobs.search_vector @@ plainto_tsquery($' + paramCount + ')');
-    params.push('english');
-    paramCount++;
-    conditions.push('jobs.search_vector @@ plainto_tsquery($' + paramCount + ')');
+    queryParamIndex = paramCount;
+    conditions.push("jobs.search_vector @@ plainto_tsquery('english', $" + paramCount + ')');
     params.push(filters.q.trim());
     paramCount++;
   }
@@ -187,9 +194,29 @@ export function buildSearchQuery(filters: SearchFilters): {
     paramCount++;
   }
 
+  if (filters.featured) {
+    conditions.push('(jobs.is_featured = TRUE AND (jobs.featured_until IS NULL OR jobs.featured_until > NOW()))');
+  }
+
+  if (filters.remote) {
+    conditions.push(
+      "(jobs.location ILIKE '%remote%' OR jobs.title ILIKE '%remote%' OR jobs.description ILIKE '%remote%')"
+    );
+  }
+
+  if (filters.category && filters.category.trim()) {
+    conditions.push('(jobs.title ILIKE $' + paramCount + ' OR jobs.description ILIKE $' + paramCount + ')');
+    params.push('%' + filters.category.trim() + '%');
+    paramCount++;
+  }
+
+  if (filters.posted_within === 1 || filters.posted_within === 7 || filters.posted_within === 30) {
+    conditions.push(`jobs.posted_at >= NOW() - INTERVAL '${filters.posted_within} days'`);
+  }
+
   const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
 
-  return { whereClause, params, paramCount };
+  return { whereClause, params, paramCount, queryParamIndex };
 }
 
 /**
@@ -197,7 +224,7 @@ export function buildSearchQuery(filters: SearchFilters): {
  */
 export function buildSortClause(
   sort: 'relevance' | 'salary' | 'posted_date' | undefined,
-  hasSearchQuery: boolean
+  queryParamIndex: number | null
 ): string {
   if (sort === 'salary') {
     return 'ORDER BY jobs.salary_normalized_usd DESC NULLS LAST, jobs.posted_at DESC';
@@ -207,9 +234,8 @@ export function buildSortClause(
     return 'ORDER BY jobs.posted_at DESC';
   }
 
-  // Default: relevance (if search query) or posted_date
-  if (hasSearchQuery) {
-    return 'ORDER BY ts_rank(jobs.search_vector, plainto_tsquery($2, $3)) DESC, jobs.posted_at DESC';
+  if (queryParamIndex) {
+    return `ORDER BY ts_rank(jobs.search_vector, plainto_tsquery('english', $${queryParamIndex})) DESC, jobs.posted_at DESC`;
   }
 
   return 'ORDER BY jobs.posted_at DESC';
@@ -223,8 +249,8 @@ export async function searchJobs(filters: SearchFilters): Promise<SearchResult> 
   const limit = Math.min(50, Math.max(1, filters.limit || 10));
   const offset = (page - 1) * limit;
 
-  const { whereClause, params } = buildSearchQuery(filters);
-  const sortClause = buildSortClause(filters.sort, Boolean(filters.q?.trim()));
+  const { whereClause, params, queryParamIndex } = buildSearchQuery(filters);
+  const sortClause = buildSortClause(filters.sort, queryParamIndex);
 
   // Get total count
   const countSql = `

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getFlaggedJobs } from '@/lib/moderation';
 import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 
 /**
  * GET /api/moderation/queue
@@ -32,7 +33,7 @@ import { getServerSession } from 'next-auth/next';
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     // Check authentication
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json(
         { error: 'Unauthorized' },

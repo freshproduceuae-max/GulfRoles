@@ -138,6 +138,18 @@ async function checkPostingVelocity(job: JobToModerate): Promise<ModerationFlag 
 }
 
 /**
+ * Keyword and link screen for partner feeds.
+ * Unverified-employer and velocity rules apply to direct posts, not to API listings.
+ */
+export function screenListingContent(job: JobToModerate): ModerationFlag | null {
+  const flags = [checkKeywords(job), checkSuspiciousLinks(job)].filter(
+    (flag): flag is ModerationFlag => flag !== null
+  );
+  if (flags.length === 0) return null;
+  return flags.reduce((prev, current) => (current.confidence > prev.confidence ? current : prev));
+}
+
+/**
  * Flag a job for moderation if suspicious patterns detected
  * Returns the highest-confidence flag or null if no issues
  */

@@ -43,8 +43,8 @@ export default function ApplyModal({ jobId, jobTitle, onClose }: ApplyModalProps
       }
 
       // Validate file size (5MB max)
-      if (file.size > 5 * 1024 * 1024) {
-        setError('File size must be less than 5MB');
+      if (file.size > 4 * 1024 * 1024) {
+        setError('File size must be less than 4MB');
         return;
       }
 

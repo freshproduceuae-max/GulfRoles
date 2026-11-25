@@ -6,6 +6,7 @@ import Filters, { FiltersState } from '@/components/job/Filters';
 import JobCard from '@/components/job/JobCard';
 import Pagination from '@/components/ui/Pagination';
 import EmptyState from '@/components/ui/EmptyState';
+import AdSlot from '@/components/monetization/AdSlot';
 import Loading from '@/components/ui/Loading';
 import Button from '@/components/ui/Button';
 
@@ -20,6 +21,8 @@ interface FormattedJob {
   job_type?: string;
   posted_at: Date;
   region?: string;
+  source?: string;
+  description?: string;
 }
 
 interface ApiResponse {
@@ -28,6 +31,7 @@ interface ApiResponse {
   page: number;
   pages: number;
   error?: string;
+  message?: string;
 }
 
 export default function SearchPageClient() {
@@ -49,13 +53,17 @@ export default function SearchPageClient() {
       const params = new URLSearchParams();
 
       if (searchParams.get('q')) params.append('q', searchParams.get('q')!);
-      if (searchParams.get('location')) params.append('location', searchParams.get('location')!);
-      if (searchParams.get('region')) params.append('region', searchParams.get('region')!);
-
-      if (filters.location) params.append('location', filters.location);
+      if (searchParams.get('location') || filters.location) {
+        params.append('location', filters.location || searchParams.get('location')!);
+      }
+      if (searchParams.get('region') || filters.region) {
+        params.append('region', filters.region || searchParams.get('region')!);
+      }
+      if (filters.category) params.append('category', filters.category);
       if (filters.job_type?.length) params.append('job_type', filters.job_type[0]);
       if (filters.salary_min) params.append('salary_min', filters.salary_min.toString());
-      if (filters.salary_max) params.append('salary_max', filters.salary_max.toString());
+      if (filters.posted_within) params.append('posted_within', filters.posted_within);
+      if (filters.remote) params.append('remote', 'true');
 
       params.append('page', page.toString());
       params.append('limit', '20');
@@ -63,8 +71,13 @@ export default function SearchPageClient() {
       const response = await fetch(`/api/jobs?${params.toString()}`);
       const data: ApiResponse = await response.json();
 
-      if (data.error) {
-        throw new Error(data.error);
+      if (!response.ok || data.error) {
+        const unavailable = data.error === 'database_unavailable' || data.error === 'schema_out_of_date';
+        throw new Error(
+          unavailable
+            ? data.message || 'Listings are temporarily unavailable.'
+            : data.error || 'Failed to fetch jobs'
+        );
       }
 
       setJobs(data.jobs);
@@ -82,7 +95,7 @@ export default function SearchPageClient() {
 
   useEffect(() => {
     fetchJobs(1);
-  }, [filters]);
+  }, [fetchJobs]);
 
   const handlePageChange = (page: number) => {
     fetchJobs(page);
@@ -101,6 +114,10 @@ export default function SearchPageClient() {
             onFiltersChange={handleFiltersChange}
             isLoading={isLoading}
             isMobile={false}
+            initial={{
+              location: searchParams.get('location') || undefined,
+              region: searchParams.get('region') || undefined,
+            }}
           />
         </div>
 
@@ -123,6 +140,7 @@ export default function SearchPageClient() {
               {total > 0 ? `${total} jobs found` : 'No jobs found'}
             </h2>
           </div>
+          <AdSlot slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_SEARCH} />
 
           {isLoading && <Loading count={5} />}
 
@@ -163,7 +181,8 @@ export default function SearchPageClient() {
                     salary_currency={job.salary_currency}
                     job_type={job.job_type}
                     posted_at={job.posted_at.toString()}
-                    region={job.region}
+                    source={job.source}
+                    description={job.description}
                   />
                 ))}
               </div>

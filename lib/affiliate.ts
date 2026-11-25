@@ -6,15 +6,42 @@ import { query } from './db';
 export const AFFILIATE_CONFIG = {
   careerjet: {
     name: 'Careerjet',
-    baseUrl: process.env.CAREERJET_AFFILIATE_URL || 'https://www.careerjet.com/search',
-    enabled: !!process.env.CAREERJET_AFFILIATE_URL,
+    get baseUrl() {
+      return process.env.CAREERJET_AFFILIATE_URL || 'https://www.careerjet.com/search';
+    },
+    get enabled() {
+      return Boolean(
+        process.env.CAREERJET_AFFILIATE_URL ||
+          process.env.CAREERJET_AFFILIATE_ID ||
+          process.env.CAREERJET_API_KEY
+      );
+    },
   },
   jooble: {
     name: 'Jooble',
-    baseUrl: process.env.JOOBLE_AFFILIATE_URL || 'https://jooble.org/search',
-    enabled: !!process.env.JOOBLE_AFFILIATE_URL,
+    get baseUrl() {
+      return process.env.JOOBLE_AFFILIATE_URL || 'https://jooble.org/search';
+    },
+    get enabled() {
+      return Boolean(process.env.JOOBLE_AFFILIATE_URL || process.env.JOOBLE_API_KEY);
+    },
+  },
+  adzuna: {
+    name: 'Adzuna',
+    get baseUrl() {
+      return process.env.ADZUNA_AFFILIATE_URL || 'https://www.adzuna.com/search';
+    },
+    get enabled() {
+      return Boolean(
+        process.env.ADZUNA_AFFILIATE_URL || process.env.ADZUNA_APP_ID || process.env.ADZUNA_APP_KEY
+      );
+    },
   },
 };
+
+export function isAffiliateSource(source: string | null | undefined): source is AffiliateNetwork {
+  return source === 'careerjet' || source === 'jooble' || source === 'adzuna';
+}
 
 export type AffiliateNetwork = keyof typeof AFFILIATE_CONFIG;
 
@@ -62,6 +89,11 @@ export function generateAffiliateUrl(
     url.searchParams.append('q', jobTitle);
   }
 
+  const affid = process.env.CAREERJET_AFFILIATE_ID || process.env.CAREERJET_API_KEY;
+  if (affiliate === 'careerjet' && affid && !url.searchParams.has('affid') && !url.searchParams.has('a')) {
+    url.searchParams.append('affid', affid);
+  }
+
   // Add UTM parameters
   Object.entries(utmParams).forEach(([key, value]) => {
     if (value) {
@@ -83,7 +115,7 @@ export function generateAffiliateUrl(
  */
 export async function trackAffiliateClick(
   jobId: string,
-  affiliate: AffiliateNetwork = 'careerjet',
+  affiliate: string = 'careerjet',
   userId?: string,
   userAgent?: string,
   referrer?: string,
@@ -158,9 +190,10 @@ export async function getJobAffiliateStats(jobId: string) {
 export function getAffiliateEarnings(affiliate: AffiliateNetwork, clicks: number): number {
   // Mock earnings calculation
   // In production, this would call the actual affiliate API
-  const earningsPerClick = {
-    careerjet: 0.5, // $0.50 per click
-    jooble: 0.75, // $0.75 per click
+  const earningsPerClick: Record<AffiliateNetwork, number> = {
+    careerjet: 0.5,
+    jooble: 0.75,
+    adzuna: 0.4,
   };
 
   return (earningsPerClick[affiliate] || 0) * clicks;

@@ -285,7 +285,7 @@ function buildDigestHTML(jobs: FormattedJob[], unsubscribeToken: string): string
  * Build a single job card HTML
  */
 function buildJobCard(job: FormattedJob, baseUrl: string): string {
-  const jobUrl = `${baseUrl}/(seeker)/search?job=${job.id}`;
+  const jobUrl = `${baseUrl}/jobs/${job.id}`;
   const salaryRange = formatSalaryRange(
     job.salary_min,
     job.salary_max,
@@ -385,6 +385,10 @@ export async function sendEmail({
   html,
   text,
 }: SendEmailOptions): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  if (!process.env.SENDGRID_API_KEY) {
+    return { success: false, error: 'Email service not configured' };
+  }
+
   try {
     const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
       method: 'POST',
@@ -558,5 +562,24 @@ export function generateJobPostedEmail(
     Your job will be visible to job seekers across our platform.
   `;
 
+  return { subject, html, text };
+}
+
+export function generateApplicationEmail(input: {
+  jobTitle: string;
+  companyName: string;
+  applicantName: string;
+  applicantEmail: string;
+  coverLetter?: string | null;
+}): { subject: string; html: string; text: string } {
+  const subject = `New application for ${input.jobTitle}`;
+  const text = [
+    `${input.applicantName} (${input.applicantEmail}) applied for ${input.jobTitle} at ${input.companyName}.`,
+    input.coverLetter ? `Note: ${input.coverLetter}` : '',
+    'The resume is in your JobBrowser applicant inbox. JobBrowser does not sell applicant CVs.',
+  ]
+    .filter(Boolean)
+    .join('\n\n');
+  const html = `<p>${text.replace(/\n/g, '<br />')}</p>`;
   return { subject, html, text };
 }

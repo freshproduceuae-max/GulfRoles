@@ -3,23 +3,68 @@ import { Pool, PoolClient, QueryResult, QueryConfig, QueryResultRow } from 'pg';
 // Initialize connection pool
 let pool: Pool | null = null;
 
+export function isDatabaseConfigured(): boolean {
+  return Boolean(process.env.DATABASE_URL || process.env.POSTGRES_URL);
+}
+
+/**
+ * Hosted Postgres (Neon, Vercel Postgres, Supabase) requires SSL.
+ * Localhost stays unencrypted. `sslmode` is stripped from the URL because
+ * node-postgres otherwise verifies certificates and rejects Neon.
+ */
+export function poolConfig(databaseUrl: string): {
+  connectionString: string;
+  ssl?: { rejectUnauthorized: false };
+} {
+  try {
+    const url = new URL(databaseUrl);
+    const local = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+    url.searchParams.delete('sslmode');
+    return {
+      connectionString: url.toString(),
+      ssl: local ? undefined : { rejectUnauthorized: false },
+    };
+  } catch {
+    const local = /localhost|127\.0\.0\.1/.test(databaseUrl);
+    return {
+      connectionString: databaseUrl,
+      ssl: local ? undefined : { rejectUnauthorized: false },
+    };
+  }
+}
+
 /**
  * Get or create the PostgreSQL connection pool
  */
+/**
+ * Runtime uses the pooled Neon URL (DATABASE_URL).
+ * Migrations use the direct URL so DDL is not sent through PgBouncer.
+ */
+export function migrationDatabaseUrl(): string | undefined {
+  return (
+    process.env.DATABASE_URL_UNPOOLED ||
+    process.env.POSTGRES_URL_NON_POOLING ||
+    process.env.DATABASE_URL ||
+    process.env.POSTGRES_URL
+  );
+}
+
 function getPool(): Pool {
   if (!pool) {
-    const databaseUrl = process.env.DATABASE_URL;
+    const databaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
 
     if (!databaseUrl) {
       throw new Error('DATABASE_URL environment variable is not set');
     }
 
+    const config = poolConfig(databaseUrl);
+    const serverless = Boolean(process.env.VERCEL);
     pool = new Pool({
-      connectionString: databaseUrl,
-      // SSL required for most cloud PostgreSQL providers
-      ssl: process.env.NODE_ENV === 'production'
-        ? { rejectUnauthorized: false }
-        : false,
+      connectionString: config.connectionString,
+      ssl: config.ssl,
+      max: serverless ? 1 : 10,
+      idleTimeoutMillis: serverless ? 5000 : 30000,
+      connectionTimeoutMillis: 10000,
     });
 
     pool.on('error', (err: Error) => {
@@ -107,6 +152,14 @@ export async function health(): Promise<{
   timestamp?: string;
   error?: string;
 }> {
+  if (!isDatabaseConfigured()) {
+    return {
+      status: 'error',
+      database: 'disconnected',
+      error: 'DATABASE_URL is not set',
+    };
+  }
+
   try {
     const result = await query('SELECT NOW()');
 
