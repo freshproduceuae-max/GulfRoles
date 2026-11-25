@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers';
 import { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { queryOne } from './db';
@@ -10,9 +11,19 @@ export interface EmployerSession {
   verified: boolean;
 }
 
+export async function readEmployerSession(): Promise<EmployerSession | null> {
+  const token = cookies().get('employer_session')?.value;
+  if (!token) return null;
+  return loadEmployerSession(token);
+}
+
 export async function getEmployerSession(request: NextRequest): Promise<EmployerSession | null> {
   const token = request.cookies.get('employer_session')?.value;
   if (!token) return null;
+  return loadEmployerSession(token);
+}
+
+async function loadEmployerSession(token: string): Promise<EmployerSession | null> {
 
   const row = await queryOne<{
     company_id: string;

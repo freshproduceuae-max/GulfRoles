@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query, queryOne } from '@/lib/db';
 import { canAccessJob } from '@/lib/access';
 import { serverErrorResponse } from '@/lib/http';
+import { generateCandidateStatusEmail, sendEmail } from '@/lib/email';
+import { appBaseUrl } from '@/lib/site';
 
 const APPLICATION_COLUMNS = `
   id, job_id, applicant_name, applicant_email, applicant_phone,
@@ -47,7 +49,7 @@ export async function PATCH(
 
     const body = await request.json();
     const { status } = body;
-    const validStatuses = ['submitted', 'viewed', 'shortlisted', 'rejected', 'hired'];
+    const validStatuses = ['new', 'reviewed', 'shortlisted', 'interview', 'offer', 'hired', 'rejected', 'submitted', 'viewed'];
     if (!validStatuses.includes(status)) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
     }
@@ -59,6 +61,40 @@ export async function PATCH(
        RETURNING ${APPLICATION_COLUMNS}`,
       [status, params.id]
     );
+
+    if (status === 'shortlisted' || status === 'rejected') {
+      const notice = await queryOne<{
+        applicant_name: string;
+        applicant_email: string;
+        status_token: string;
+        title: string;
+        company_name: string;
+      }>(
+        `SELECT a.applicant_name, a.applicant_email, a.status_token, j.title, j.company_name
+         FROM applications a
+         JOIN jobs j ON j.id = a.job_id
+         WHERE a.id = $1`,
+        [params.id]
+      );
+      if (notice?.status_token) {
+        const email = generateCandidateStatusEmail({
+          applicantName: notice.applicant_name,
+          jobTitle: notice.title,
+          companyName: notice.company_name,
+          status,
+          statusUrl: `${appBaseUrl()}/application-status/${notice.status_token}`,
+        });
+        const sent = await sendEmail({
+          to: notice.applicant_email,
+          subject: email.subject,
+          html: email.html,
+          text: email.text,
+        });
+        if (!sent.success) {
+          console.error('Status saved but candidate email was not sent:', sent.error);
+        }
+      }
+    }
 
     return NextResponse.json({ application: result.rows[0] });
   } catch (error) {

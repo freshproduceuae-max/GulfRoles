@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
 
 interface WizardData {
   title: string;
@@ -24,12 +23,12 @@ const JOB_TYPES = ['full-time', 'part-time', 'contract', 'internship'];
 const CURRENCIES = ['USD', 'AED', 'SAR', 'INR', 'AUD'];
 
 export default function JobPostingWizard({ employerId: _employerId }: JobPostingWizardProps) {
-  const router = useRouter();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState(false);
   const [createdJobId, setCreatedJobId] = useState<string>('');
+  const [publishStatus, setPublishStatus] = useState<string>('');
 
   const [formData, setFormData] = useState<WizardData>({
     title: '',
@@ -148,6 +147,7 @@ export default function JobPostingWizard({ employerId: _employerId }: JobPosting
       }
 
       setCreatedJobId(data.job_id);
+      setPublishStatus(typeof data.status === 'string' ? data.status : '');
       setSuccess(true);
       setStep(3);
     } catch (err) {
@@ -183,10 +183,11 @@ export default function JobPostingWizard({ employerId: _employerId }: JobPosting
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="job-title" className="block text-sm font-medium text-gray-700 mb-2">
               Job Title
             </label>
             <input
+              id="job-title"
               type="text"
               name="title"
               value={formData.title}
@@ -197,10 +198,11 @@ export default function JobPostingWizard({ employerId: _employerId }: JobPosting
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="company-name" className="block text-sm font-medium text-gray-700 mb-2">
               Company Name
             </label>
             <input
+              id="company-name"
               type="text"
               name="company_name"
               value={formData.company_name}
@@ -212,10 +214,11 @@ export default function JobPostingWizard({ employerId: _employerId }: JobPosting
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="job-location" className="block text-sm font-medium text-gray-700 mb-2">
                 Location
               </label>
               <input
+                id="job-location"
                 type="text"
                 name="location"
                 value={formData.location}
@@ -225,10 +228,11 @@ export default function JobPostingWizard({ employerId: _employerId }: JobPosting
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="job-region" className="block text-sm font-medium text-gray-700 mb-2">
                 Region
               </label>
               <select
+                id="job-region"
                 name="region"
                 value={formData.region}
                 onChange={handleInputChange}
@@ -244,10 +248,11 @@ export default function JobPostingWizard({ employerId: _employerId }: JobPosting
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="job-type" className="block text-sm font-medium text-gray-700 mb-2">
               Job Type
             </label>
             <select
+              id="job-type"
               name="job_type"
               value={formData.job_type}
               onChange={handleInputChange}
@@ -308,10 +313,11 @@ export default function JobPostingWizard({ employerId: _employerId }: JobPosting
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="job-description" className="block text-sm font-medium text-gray-700 mb-2">
               Job Description *
             </label>
             <textarea
+              id="job-description"
               name="description"
               value={formData.description}
               onChange={handleInputChange}
@@ -413,8 +419,10 @@ export default function JobPostingWizard({ employerId: _employerId }: JobPosting
                 d="M5 13l4 4L19 7"
               />
             </svg>
-            <p className="text-gray-600 text-lg mb-6">
-              Your job has been published successfully!
+            <p className="text-gray-700 text-lg mb-6">
+              {publishStatus === 'published'
+                ? 'Your job is published. Candidates can apply on JobBrowser.'
+                : 'Your job was saved and is waiting for review before candidates can apply.'}
             </p>
             <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
               <p className="text-sm text-gray-600">
@@ -427,33 +435,27 @@ export default function JobPostingWizard({ employerId: _employerId }: JobPosting
                 </code>
               </p>
             </div>
-            <div className="flex gap-4">
-              <button
-                onClick={() => {
-                  setFormData({
-                    title: '',
-                    company_name: '',
-                    location: '',
-                    region: 'UAE',
-                    job_type: 'full-time',
-                    description: '',
-                    salary_min: '',
-                    salary_max: '',
-                    salary_currency: 'USD',
-                  });
-                  setStep(1);
-                  setSuccess(false);
-                }}
-                className="flex-1 px-6 py-2 text-gray-600 font-medium border border-gray-300 rounded-lg hover:bg-gray-100 transition"
+            <div className="flex flex-col sm:flex-row gap-4">
+              <a
+                href={`/employer/inbox/${createdJobId}`}
+                className="flex-1 px-6 py-2 bg-primary-500 text-white font-medium rounded-lg text-center"
               >
-                Post Another Job
-              </button>
-              <button
-                onClick={() => router.push('/')}
-                className="flex-1 px-6 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition"
+                View applicants
+              </a>
+              <a
+                href="/employer/jobs"
+                className="flex-1 px-6 py-2 border border-gray-300 text-gray-900 font-medium rounded-lg text-center"
               >
-                View Jobs
-              </button>
+                Your jobs
+              </a>
+              {publishStatus === 'published' ? (
+                <a
+                  href={`/jobs/${createdJobId}`}
+                  className="flex-1 px-6 py-2 border border-gray-300 text-gray-900 font-medium rounded-lg text-center"
+                >
+                  View public job
+                </a>
+              ) : null}
             </div>
           </div>
         </div>

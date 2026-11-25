@@ -12,7 +12,9 @@ The tables are created on the next Vercel build after this branch is merged. You
 DATABASE_URL="postgresql://…pooler…" DATABASE_URL_UNPOOLED="postgresql://…direct…" npm run migrate
 ```
 
-Migrations are `db/migrations/001_init_schema.sql` through `004_source_policy.sql`. Do not run `npm run seed` or `npm run seed:production` against Neon.
+Migrations are `db/migrations/001_init_schema.sql` through `006_recruiter_workspace.sql`. Do not run `npm run seed` or `npm run seed:production` against Neon.
+
+`npm run build` runs `tsx scripts/migrate.ts` before `next build`. `tsx` is a production dependency, so the migrate step still runs if `NODE_ENV=production` causes npm to skip devDependencies.
 
 ## 2. Set environment variables in Vercel
 
@@ -33,6 +35,8 @@ Generate secrets with `openssl rand -base64 32`.
 | `NEXT_PUBLIC_APP_BASE_URL` | Yes | `https://jobbrowser.app` (or the vercel.app URL until the domain works). |
 | `NEXT_PUBLIC_API_BASE_URL` | Yes | That same origin plus `/api`. |
 | `NEXT_PUBLIC_CONTACT_EMAIL` | Yes | The inbox you actually read. |
+| `SITE_PUBLIC` | Leave unset | Set to `true` only when the site should be indexed. Until then, `robots.txt` disallows every path and every page sends `noindex`. |
+| `RESUME_STORE` | Leave unset | `neon` stores CVs in Postgres. `blob` plus `BLOB_READ_WRITE_TOKEN` uses a private Vercel Blob store. Downloads stay on JobBrowser either way. |
 | `SENDGRID_API_KEY` | For email | SendGrid API key. Without it, alerts, employer links, and application emails do not send. The site still loads. |
 | `SENDGRID_FROM_EMAIL` | For email | A sender on a domain you verify in SendGrid, such as `noreply@jobbrowser.app`. |
 | `CAREERJET_AFFILIATE_ID` | For Careerjet jobs and clicks | Publisher id from Careerjet. `CAREERJET_API_KEY` is accepted as the same value. |
@@ -44,9 +48,9 @@ Generate secrets with `openssl rand -base64 32`.
 
 Every name is also listed in `.env.example`.
 
-Remove the manually set `NODE_ENV`. Vercel already sets it: `production` for the build and for production runtime. A hand-set value overrides that for every environment. If it is not exactly `production`, the build and the live site misbehave. If it is `production`, it is redundant and still overrides Preview.
+Leave `SITE_PUBLIC` unset on Production until you want Google to index the site. The live site at `jobbrowser.vercel.app` should stay out of search while the employer applicant flow is the launch step. Setting the variable to `true` later opens `robots.txt` and removes the site-wide `noindex`. The sitemap line always uses `NEXT_PUBLIC_APP_BASE_URL`.
 
-After this branch is merged, open the deployment and confirm `https://jobbrowser.vercel.app/api/health` returns `"database": "connected"`.
+Do not set `NODE_ENV` by hand. Vercel sets it. `tsx` is already installed for the build even if a production install skips devDependencies.
 
 ## 3. Apply for the affiliate accounts
 

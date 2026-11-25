@@ -168,9 +168,15 @@ These were made while finishing the code against the locked MVP. They do not cha
 
 ### Resumes
 
-**Choice:** Resume bytes live in Postgres and are downloaded by the signed-in employer. They are not written under `public/`.
+**Choice:** Resume bytes live in Postgres by default and are downloaded by the signed-in employer or an admin. `RESUME_STORE=blob` can put the same files in a private Vercel Blob store. The pages call one adapter. Files are not written under `public/`. PDF and DOCX only, 4MB, with macro and active-content checks. Applications and files are deleted after 12 months.
 
-**Rationale:** Vercel’s disk is ephemeral, and a public uploads folder would expose CVs. CV resale stays forbidden.
+**Rationale:** Vercel’s disk is ephemeral, and a public uploads folder would expose CVs. Postgres works on the current free Neon database and moves with the data. Blob is optional. CV resale stays forbidden.
+
+### 2026-11-25 — Stay out of search until the employer flow is the product
+
+**Choice:** `SITE_PUBLIC` must be the string `true` before crawlers are invited. Otherwise `robots.txt` disallows `/`, pages send `noindex`, and responses include `X-Robots-Tag: noindex, nofollow`. The sitemap URL is `NEXT_PUBLIC_APP_BASE_URL` plus `/sitemap.xml`.
+
+**Rationale:** The owner does not want the live Vercel URL indexed before employers can receive applications on the site.
 
 ### 2026-11-25 — Legal inventory, not a second catalog
 

@@ -18,11 +18,14 @@ export default defineConfig({
     timeout: 120_000,
     env: {
       ...process.env,
+      DATABASE_URL:
+        process.env.DATABASE_URL || 'postgresql://jobbrowser:jobbrowser@127.0.0.1:5432/jobbrowser',
       ADMIN_EMAIL: 'admin@jobbrowser.app',
       ADMIN_PASSWORD: 'test-admin-pass',
       NEXTAUTH_SECRET: 'test-secret-test-secret-test-secret-32',
       NEXTAUTH_URL: 'http://127.0.0.1:3000',
       NEXT_PUBLIC_APP_BASE_URL: 'http://127.0.0.1:3000',
+      SITE_PUBLIC: '',
     },
   },
   projects: [
