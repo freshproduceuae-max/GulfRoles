@@ -19,6 +19,10 @@ export interface JobRow extends QueryResultRow {
   job_type: string;
   source: string;
   source_url: string | null;
+  source_job_id?: string | null;
+  apply_url?: string | null;
+  google_jobs_allowed?: boolean | null;
+  attribution?: string | null;
   employer_email: string | null;
   employer_verified: boolean;
   posted_at: string | Date;
@@ -52,6 +56,10 @@ export interface FormattedJob {
   job_type: string;
   source: string;
   source_url: string | null;
+  source_job_id?: string | null;
+  apply_url?: string | null;
+  google_jobs_allowed?: boolean | null;
+  attribution?: string | null;
   employer_email: string | null;
   employer_verified: boolean;
   posted_at: Date;
@@ -110,6 +118,10 @@ export function formatJobResult(row: JobRow): FormattedJob {
     job_type: row.job_type,
     source: row.source,
     source_url: row.source_url,
+    source_job_id: row.source_job_id ?? null,
+    apply_url: row.apply_url ?? null,
+    google_jobs_allowed: row.google_jobs_allowed ?? null,
+    attribution: row.attribution ?? null,
     employer_email: row.employer_email,
     employer_verified: row.employer_verified,
     posted_at: new Date(row.posted_at),
@@ -223,6 +235,10 @@ export async function searchJobs(filters: SearchFilters): Promise<SearchResult> 
   const limit = Math.min(50, Math.max(1, filters.limit || 10));
   const offset = (page - 1) * limit;
 
+  if (!process.env.DATABASE_URL?.trim()) {
+    return { jobs: [], total: 0, page, pages: 0 };
+  }
+
   const { whereClause, params } = buildSearchQuery(filters);
   const sortClause = buildSortClause(filters.sort, Boolean(filters.q?.trim()));
 
@@ -239,33 +255,7 @@ export async function searchJobs(filters: SearchFilters): Promise<SearchResult> 
 
   // Get jobs with pagination
   const jobsSql = `
-    SELECT
-      jobs.id,
-      jobs.title,
-      jobs.description,
-      jobs.company_id,
-      jobs.company_name,
-      jobs.location,
-      jobs.region,
-      jobs.salary_min,
-      jobs.salary_max,
-      jobs.salary_currency,
-      jobs.salary_normalized_usd,
-      jobs.job_type,
-      jobs.source,
-      jobs.source_url,
-      jobs.employer_email,
-      jobs.employer_verified,
-      jobs.posted_at,
-      jobs.expires_at,
-      jobs.status,
-      jobs.equity_min_pct,
-      jobs.equity_max_pct,
-      jobs.bonus_structure,
-      jobs.benefits,
-      jobs.culture_notes,
-      jobs.created_at,
-      jobs.updated_at
+    SELECT jobs.*
     FROM jobs
     ${whereClause}
     ${sortClause}
@@ -283,4 +273,16 @@ export async function searchJobs(filters: SearchFilters): Promise<SearchResult> 
     page,
     pages,
   };
+}
+
+export async function getJobById(id: string): Promise<FormattedJob | null> {
+  if (!process.env.DATABASE_URL?.trim()) {
+    return null;
+  }
+  const result = await query<JobRow>(
+    `SELECT jobs.* FROM jobs WHERE jobs.id = $1 AND jobs.deleted_at IS NULL LIMIT 1`,
+    [id]
+  );
+  const row = result.rows[0];
+  return row ? formatJobResult(row) : null;
 }

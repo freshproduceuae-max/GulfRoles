@@ -31,7 +31,8 @@ export default function Homepage() {
             Find Your Next Opportunity
           </h1>
           <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-400 mb-8 sm:mb-12">
-            Search across thousands of verified job listings from companies around the world.
+            Employer posts are free. Listings come from companies on GulfRoles and documented ATS
+            boards and feeds — not scraped from Indeed, Glassdoor, LinkedIn, or GulfTalent.
           </p>
 
           <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 mb-8">

@@ -20,13 +20,13 @@ export default function Header() {
             <Link
               href="/"
               className="flex items-center space-x-2 hover:opacity-80 transition"
-              aria-label="JobBrowser home"
+              aria-label="GulfRoles home"
             >
               <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">J</span>
+                <span className="text-white font-bold text-lg">G</span>
               </div>
               <span className="hidden sm:inline-block text-xl font-bold text-gray-900 dark:text-white">
-                JobBrowser
+                GulfRoles
               </span>
             </Link>
           </div>
@@ -63,12 +63,13 @@ export default function Header() {
             >
               Set Alerts
             </button>
-            <button
+            <Link
+              href="/post-job"
               className="px-4 py-2 text-sm font-medium text-white bg-secondary-500 rounded-lg hover:bg-secondary-600 transition"
-              aria-label="Post a job"
+              aria-label="Post a job for free"
             >
-              Post a Job
-            </button>
+              Post a Job — Free
+            </Link>
           </div>
 
           {/* Mobile Hamburger Menu Button */}
@@ -128,12 +129,13 @@ export default function Header() {
               >
                 Set Alerts
               </button>
-              <button
-                className="w-full px-4 py-2 text-sm font-medium text-white bg-secondary-500 rounded-lg hover:bg-secondary-600 transition"
-                aria-label="Post a job"
+              <Link
+                href="/post-job"
+                className="block w-full px-4 py-2 text-sm font-medium text-white bg-secondary-500 rounded-lg hover:bg-secondary-600 transition text-center"
+                aria-label="Post a job for free"
               >
-                Post a Job
-              </button>
+                Post a Job — Free
+              </Link>
             </div>
           </div>
         )}

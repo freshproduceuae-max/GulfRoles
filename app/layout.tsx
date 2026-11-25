@@ -3,10 +3,10 @@ import { Providers } from './providers'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'JobBrowser - Find Your Next Opportunity',
-  description: 'Aggregate and browse job listings from multiple sources in one place.',
+  title: 'GulfRoles - GCC and India jobs',
+  description: 'Free employer posts plus licensed ATS and feed jobs. No Indeed, Glassdoor, LinkedIn, or GulfTalent scraping.',
   keywords: ['jobs', 'careers', 'job search', 'employment'],
-  authors: [{ name: 'JobBrowser Team' }],
+  authors: [{ name: 'GulfRoles' }],
   viewport: 'width=device-width, initial-scale=1',
   robots: {
     index: true,
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: 'https://jobbrowser.app',
-    siteName: 'JobBrowser',
+    siteName: 'GulfRoles',
   },
 }
 

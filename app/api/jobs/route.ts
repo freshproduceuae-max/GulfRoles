@@ -213,6 +213,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     }
 
+    // Employer posts are always free inventory we own. Never ingest blocked catalogs here.
+
     // Create job and handle moderation in transaction
     const result = await transaction(async (client) => {
       // Insert job - initially as draft
@@ -220,8 +222,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         `INSERT INTO jobs (
           title, description, company_name, location, region, job_type,
           employer_email, salary_min, salary_max, salary_currency,
-          source_url, benefits, status, posted_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
+          source, source_url, apply_url, google_jobs_allowed, benefits, status, posted_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW())
         RETURNING id`,
         [
           body.title,
@@ -234,9 +236,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           body.salary_min || null,
           body.salary_max || null,
           body.salary_currency || 'USD',
+          'employer',
           body.source_url || null,
+          body.apply_url || body.source_url || null,
+          true,
           body.benefits ? JSON.stringify(body.benefits) : null,
-          'draft', // Initial status
+          'draft',
         ]
       );
 

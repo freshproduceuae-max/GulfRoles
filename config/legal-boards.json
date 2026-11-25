@@ -1,0 +1,39 @@
+{
+  "blocked": ["indeed", "glassdoor", "linkedin", "gulftalent"],
+  "ats": [
+    {
+      "vendor": "greenhouse",
+      "board": "careem",
+      "company": "Careem",
+      "regionHint": "UAE"
+    },
+    {
+      "vendor": "greenhouse",
+      "board": "talabat",
+      "company": "Talabat",
+      "regionHint": "UAE"
+    },
+    {
+      "vendor": "lever",
+      "board": "noon",
+      "company": "noon",
+      "regionHint": "UAE"
+    }
+  ],
+  "feeds": [
+    {
+      "name": "remoteok",
+      "url": "https://remoteok.com/api",
+      "googleJobs": true,
+      "attribution": "Remote OK",
+      "linkRequired": true
+    },
+    {
+      "name": "remotive",
+      "url": "https://remotive.com/api/remote-jobs",
+      "googleJobs": false,
+      "attribution": "Remotive",
+      "maxFetchesPerDay": 4
+    }
+  ]
+}

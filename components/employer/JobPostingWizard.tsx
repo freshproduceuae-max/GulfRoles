@@ -13,6 +13,7 @@ interface WizardData {
   salary_min: string;
   salary_max: string;
   salary_currency: string;
+  employer_email: string;
 }
 
 interface JobPostingWizardProps {
@@ -41,6 +42,7 @@ export default function JobPostingWizard({ employerId: _employerId }: JobPosting
     salary_min: '',
     salary_max: '',
     salary_currency: 'USD',
+    employer_email: '',
   });
 
   const handleInputChange = (
@@ -80,6 +82,10 @@ export default function JobPostingWizard({ employerId: _employerId }: JobPosting
       }
       if (!formData.job_type) {
         setError('Job type is required');
+        return false;
+      }
+      if (!formData.employer_email.trim() || !formData.employer_email.includes('@')) {
+        setError('A work email is required so applicants can reach you');
         return false;
       }
     } else if (stepNum === 2) {
@@ -127,8 +133,9 @@ export default function JobPostingWizard({ employerId: _employerId }: JobPosting
         salary_min: formData.salary_min ? parseInt(formData.salary_min) : null,
         salary_max: formData.salary_max ? parseInt(formData.salary_max) : null,
         salary_currency: formData.salary_currency,
-        source: 'direct',
-        employer_verified: true,
+        employer_email: formData.employer_email,
+        source: 'employer',
+        employer_verified: false,
       };
 
       const response = await fetch('/api/jobs', {
@@ -176,6 +183,9 @@ export default function JobPostingWizard({ employerId: _employerId }: JobPosting
         </div>
 
         <form className="px-6 py-8 space-y-6">
+          <p className="text-sm text-green-800 bg-green-50 border border-green-200 rounded-lg p-3">
+            Posting is free. GulfRoles does not sell recruitment seats.
+          </p>
           {error && (
             <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-sm text-red-600 font-medium">{error}</p>
@@ -192,6 +202,20 @@ export default function JobPostingWizard({ employerId: _employerId }: JobPosting
               value={formData.title}
               onChange={handleInputChange}
               placeholder="e.g., Senior Software Engineer"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-gray-900"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Work email
+            </label>
+            <input
+              type="email"
+              name="employer_email"
+              value={formData.employer_email}
+              onChange={handleInputChange}
+              placeholder="you@company.com"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-gray-900"
             />
           </div>
@@ -440,6 +464,7 @@ export default function JobPostingWizard({ employerId: _employerId }: JobPosting
                     salary_min: '',
                     salary_max: '',
                     salary_currency: 'USD',
+                    employer_email: '',
                   });
                   setStep(1);
                   setSuccess(false);

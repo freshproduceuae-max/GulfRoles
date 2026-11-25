@@ -9,7 +9,9 @@
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "seed": "tsx db/seed.ts",
-    "seed:production": "NODE_ENV=production tsx db/seed-production.ts"
+    "seed:production": "NODE_ENV=production tsx db/seed-production.ts",
+    "ingest:legal": "tsx scripts/ingest-legal.ts",
+    "test:jsonld": "tsx lib/jsonld.test.ts"
   },
   "dependencies": {
     "@sentry/nextjs": "^7.100.0",

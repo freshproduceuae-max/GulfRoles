@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Button from '@/components/ui/Button';
 import type { Job } from '@/lib/validation';
+import { applyPathForJob } from '@/lib/job-source';
 
 interface JobActionsProps {
   job: Job;
@@ -84,12 +85,11 @@ const JobActions: React.FC<JobActionsProps> = ({ job, onApplyClick, affiliate = 
       onApplyClick();
     }
 
-    // Track click and redirect to affiliate URL
     try {
-      const affiliateUrl = `/api/affiliate/click?job=${job.id}&network=${affiliate}&title=${encodeURIComponent(
-        job.title
-      )}`;
-      window.location.href = affiliateUrl;
+      const tracked = applyPathForJob(job.id);
+      window.location.href = affiliate
+        ? `${tracked}&network=${encodeURIComponent(affiliate)}`
+        : tracked;
     } catch (error) {
       console.error('Failed to redirect to affiliate click tracker:', error);
       // Fallback: just call the callback

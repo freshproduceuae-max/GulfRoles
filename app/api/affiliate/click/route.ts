@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { trackAffiliateClick, generateAffiliateUrl, AFFILIATE_CONFIG, AffiliateNetwork } from '@/lib/affiliate';
+import { trackAffiliateClick, generateAffiliateUrl, AffiliateNetwork } from '@/lib/affiliate';
 
 /**
  * POST /api/affiliate/click
@@ -21,14 +21,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     if (!jobId) {
       return NextResponse.json(
         { error: 'Job ID is required' },
-        { status: 400 }
-      );
-    }
-
-    // Validate affiliate network
-    if (!AFFILIATE_CONFIG[network]) {
-      return NextResponse.json(
-        { error: `Invalid affiliate network: ${network}` },
         { status: 400 }
       );
     }

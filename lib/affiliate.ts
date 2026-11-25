@@ -16,7 +16,7 @@ export const AFFILIATE_CONFIG = {
   },
 };
 
-export type AffiliateNetwork = keyof typeof AFFILIATE_CONFIG;
+export type AffiliateNetwork = keyof typeof AFFILIATE_CONFIG | string;
 
 /**
  * UTM parameters for tracking
@@ -41,8 +41,8 @@ export function generateAffiliateUrl(
   affiliate: AffiliateNetwork = 'careerjet',
   jobTitle?: string
 ): string {
-  const config = AFFILIATE_CONFIG[affiliate];
-  if (!config.enabled) {
+  const config = AFFILIATE_CONFIG[affiliate as keyof typeof AFFILIATE_CONFIG];
+  if (!config?.enabled) {
     console.warn(`Affiliate network ${affiliate} is not configured`);
     return '';
   }
@@ -89,6 +89,7 @@ export async function trackAffiliateClick(
   referrer?: string,
   ipAddress?: string
 ): Promise<void> {
+  const network = String(affiliate || 'direct').slice(0, 100);
   try {
     await query(
       `INSERT INTO affiliate_clicks (
@@ -105,7 +106,7 @@ export async function trackAffiliateClick(
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
       [
         jobId,
-        affiliate,
+        network,
         userId || null,
         'jobbrowser',
         'apply',
@@ -163,7 +164,7 @@ export function getAffiliateEarnings(affiliate: AffiliateNetwork, clicks: number
     jooble: 0.75, // $0.75 per click
   };
 
-  return (earningsPerClick[affiliate] || 0) * clicks;
+  return (earningsPerClick[affiliate as keyof typeof earningsPerClick] || 0) * clicks;
 }
 
 /**
@@ -186,7 +187,7 @@ export async function getTotalAffiliateEarnings(since?: Date): Promise<number> {
     let totalEarnings = 0;
     result.rows.forEach((row: any) => {
       totalEarnings += getAffiliateEarnings(
-        row.affiliate as AffiliateNetwork,
+        row.affiliate as keyof typeof AFFILIATE_CONFIG,
         row.click_count
       );
     });
