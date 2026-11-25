@@ -45,5 +45,8 @@ test('CPC partners and Remotive do not get JobPosting markup', () => {
   };
   assert.equal(buildJobPostingJsonLd({ ...base, source: 'remotive' }), null);
   assert.equal(buildJobPostingJsonLd({ ...base, source: 'careerjet' }), null);
+  assert.equal(buildJobPostingJsonLd({ ...base, source: 'feed:remotive' }), null);
+  assert.equal(buildJobPostingJsonLd({ ...base, source: 'whatjobs' }), null);
   assert.ok(buildJobPostingJsonLd({ ...base, source: 'greenhouse' }));
+  assert.ok(buildJobPostingJsonLd({ ...base, source: 'employer' }));
 });

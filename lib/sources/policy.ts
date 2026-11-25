@@ -107,6 +107,15 @@ const POLICIES: SourcePolicy[] = [
     redistributable: false,
   },
   {
+    id: 'whatjobs',
+    kind: 'partner',
+    label: 'WhatJobs',
+    attribution: 'WhatJobs partner listing. Not marked up for Google for Jobs unless the insertion order allows it.',
+    googleJobs: false,
+    cpcTracked: true,
+    redistributable: false,
+  },
+  {
     id: 'adzuna',
     kind: 'partner',
     label: 'Adzuna',
@@ -119,8 +128,16 @@ const POLICIES: SourcePolicy[] = [
 
 const BY_ID = new Map(POLICIES.map((policy) => [policy.id, policy]));
 
+export function canonicalSourceId(source: string | null | undefined): string {
+  let id = (source || 'direct').trim().toLowerCase();
+  if (id === 'employer') return 'direct';
+  const colon = id.indexOf(':');
+  if (colon > 0) id = id.slice(colon + 1);
+  return id;
+}
+
 export function policyFor(source: string | null | undefined): SourcePolicy {
-  const id = (source || 'direct').trim().toLowerCase();
+  const id = canonicalSourceId(source);
   return (
     BY_ID.get(id) || {
       id,

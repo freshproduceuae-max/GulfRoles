@@ -10,10 +10,10 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_BASE_URL || 'https://jobbrowser.app'),
-  title: 'JobBrowser - Find Your Next Opportunity',
-  description: 'Search jobs in the UAE, Saudi Arabia, India, Australia, and the United States.',
+  title: 'GulfRoles - GCC and India jobs',
+  description: 'Free employer posts plus licensed ATS and feed jobs. No Indeed, Glassdoor, LinkedIn, or GulfTalent scraping.',
   keywords: ['jobs', 'careers', 'job search', 'employment', 'UAE jobs', 'Saudi jobs'],
-  authors: [{ name: 'JobBrowser' }],
+  authors: [{ name: 'GulfRoles' }],
   robots: {
     index: true,
     follow: true,
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: '/',
-    siteName: 'JobBrowser',
+    siteName: 'GulfRoles',
   },
 }
 

@@ -32,7 +32,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'Job not found' }, { status: 404 });
     }
 
-    if (job.source === 'direct') {
+    if (job.source === 'direct' || job.source === 'employer') {
       return NextResponse.redirect(new URL(`/jobs/${job.id}`, request.url));
     }
 

@@ -1,37 +1,36 @@
 import JobPostingWizard from '@/components/employer/JobPostingWizard';
+import Header from '@/components/shared/Header';
+import Footer from '@/components/shared/Footer';
 import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
 
 export const metadata = {
-  title: 'Post a Job | JobBrowser',
-  description: 'Post job listings on JobBrowser',
+  title: 'Post a Job free | GulfRoles',
+  description: 'Post GCC and India jobs on GulfRoles at no charge. No recruitment seats.',
 };
 
 export default function PostJobPage() {
-  // Check if employer has valid session
   const cookieStore = cookies();
-  const sessionToken = cookieStore.get('employer_session')?.value;
-  const employerId = cookieStore.get('employer_id')?.value;
-
-  if (!sessionToken || !employerId) {
-    redirect('/employer/login');
-  }
+  const employerId = cookieStore.get('employer_id')?.value || 'public';
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <Header />
       <div className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <h1 className="text-3xl font-bold text-gray-900">Post a Job</h1>
-          <p className="text-gray-600 mt-1">Fill in the details below to post your job listing. Connecting an existing Greenhouse, Lever, Ashby, or Workable board is separate and also free.</p>
-          <a href="/employer/sources" className="text-blue-700 underline text-sm">Connect a careers board</a>
+          <h1 className="text-3xl font-bold text-gray-900">Post a Job — free</h1>
+          <p className="text-gray-600 mt-1">
+            Employers post at no charge. There are no paid recruitment seats. Optional featured
+            listings may come later as pay-per-job, not user licenses.
+          </p>
+          <a href="/employer/sources" className="text-blue-700 underline text-sm">
+            Connect a documented Greenhouse, Lever, Ashby, or Workable board
+          </a>
         </div>
       </div>
-
-      {/* Wizard */}
-      <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8 flex-1">
         <JobPostingWizard employerId={employerId} />
       </div>
+      <Footer />
     </div>
   );
 }

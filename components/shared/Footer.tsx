@@ -107,15 +107,15 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
                 <Link
                   href="/"
                   className="flex items-center space-x-2 hover:opacity-80 transition mb-4"
-                  aria-label="JobBrowser home"
+                  aria-label="GulfRoles home"
                 >
                   <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center">
-                    <span className="text-white font-bold text-lg">J</span>
+                    <span className="text-white font-bold text-lg">G</span>
                   </div>
-                  <span className="text-lg font-bold text-white">JobBrowser</span>
+                  <span className="text-lg font-bold text-white">GulfRoles</span>
                 </Link>
                 <p className="text-sm text-gray-400 mb-4">
-                  Find your next opportunity from top companies worldwide.
+                  GCC and India jobs from free employer posts and documented ATS boards.
                 </p>
 
                 {/* Social Links */}
@@ -217,7 +217,7 @@ const Footer = React.forwardRef<HTMLElement, FooterProps>(
             {/* Footer Bottom */}
             <div className="pt-8 sm:pt-12 flex flex-col sm:flex-row items-center justify-between gap-4">
               <p className="text-sm text-gray-400 text-center sm:text-left">
-                © {currentYear} JobBrowser. All rights reserved.
+                © {currentYear} GulfRoles. All rights reserved.
               </p>
 
               {/* Bottom Links */}

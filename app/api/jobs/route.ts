@@ -218,14 +218,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const session = await getEmployerSession(request);
-    if (!session) {
+    const body = await request.json();
+    const employerEmail = String(session?.email || body.employer_email || '').trim();
+    if (!employerEmail || !employerEmail.includes('@')) {
       return NextResponse.json(
-        { error: 'Sign in with the email link before posting a job.' },
-        { status: 401 }
+        { error: 'A work email is required to post. Posting is free; there are no recruitment seats.' },
+        { status: 400 }
       );
     }
-
-    const body = await request.json();
 
     const required = ['title', 'description', 'company_name', 'location', 'region', 'job_type'];
     for (const field of required) {
@@ -267,13 +267,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         [
           body.title,
           body.description,
-          session.companyId,
+          session?.companyId || null,
           body.company_name,
           body.location,
           region.db,
           body.job_type,
-          session.email,
-          session.verified,
+          employerEmail,
+          session?.verified || false,
           salaryMin,
           salaryMax,
           salaryCurrency,
@@ -290,8 +290,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         title: body.title,
         description: body.description,
         company_name: body.company_name,
-        employer_verified: session.verified,
-        employer_email: session.email,
+        employer_verified: session?.verified || false,
+        employer_email: employerEmail,
         source_url: body.source_url,
       });
 
