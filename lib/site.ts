@@ -31,10 +31,7 @@ export function appBaseUrl(): string {
   return raw.replace(/\/$/, '');
 }
 
-export function contactEmail(): string {
-  return (
-    process.env.NEXT_PUBLIC_CONTACT_EMAIL ||
-    process.env.CONTACT_EMAIL ||
-    'contact@jobbrowser.app'
-  );
+export function contactFormUrl(topic?: string): string {
+  const base = `${appBaseUrl()}/contact`;
+  return topic ? `${base}?topic=${encodeURIComponent(topic)}` : base;
 }

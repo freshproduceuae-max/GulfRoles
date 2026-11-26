@@ -13,7 +13,7 @@ export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [formData, setFormData] = useState<FormData>({
-    email: 'admin@jobbrowser.app',
+    email: '',
     password: '',
   });
   const [error, setError] = useState<string>('');
@@ -90,7 +90,7 @@ export default function LoginForm() {
                   onChange={handleChange}
                   disabled={isLoading}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-900"
-                  placeholder="admin@jobbrowser.app"
+                  placeholder="Email"
                   required
                 />
               </div>
@@ -108,7 +108,7 @@ export default function LoginForm() {
                   onChange={handleChange}
                   disabled={isLoading}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-900"
-                  placeholder="admin@jobbrowser.app"
+                  placeholder="Password"
                   required
                 />
               </div>
@@ -139,17 +139,6 @@ export default function LoginForm() {
                 )}
               </button>
             </form>
-
-            {/* Demo Info */}
-            <div className="mt-8 pt-6 border-t border-gray-200">
-              <div className="bg-blue-50 rounded-lg p-4">
-                <p className="text-xs text-gray-600 mb-2">
-                  <span className="font-semibold">Demo Credentials:</span>
-                </p>
-                <p className="text-xs text-gray-600">Email: admin@jobbrowser.app</p>
-                <p className="text-xs text-gray-600">Password: password</p>
-              </div>
-            </div>
           </div>
         </div>
 

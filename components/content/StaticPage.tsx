@@ -1,12 +1,10 @@
 import Link from 'next/link';
-import { contactEmail } from '@/lib/site';
 
 export function OperatorNotice() {
-  const email = contactEmail();
   return (
     <p>
       JobBrowser at jobbrowser.app is an independent job aggregator, operated as a sole proprietorship.
-      Privacy and legal requests go to <a className="underline" href={`mailto:${email}`}>{email}</a>.
+      Privacy and legal requests go through the <Link className="underline" href="/contact?topic=legal-privacy">contact form</Link>.
     </p>
   );
 }
