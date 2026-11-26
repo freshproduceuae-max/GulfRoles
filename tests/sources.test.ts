@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { allowsGoogleJobs, isBlockedIngestUrl, policyFor } from '../lib/sources/policy';
-import { mapGreenhouseJob, mapRemotiveJob, resolveRegion } from '../lib/sources/adapters';
+import { detachGluedPlace, mapGreenhouseJob, mapRemotiveJob, resolveRegion } from '../lib/sources/adapters';
 
 test('source policy keeps Google Jobs off for Remotive and CPC partners', () => {
   assert.equal(allowsGoogleJobs('direct'), true);
@@ -63,4 +63,19 @@ test('ATS and Remotive mappers keep only located, allowed apply links', () => {
   assert.equal(remotive?.source, 'remotive');
   assert.equal(remotive?.region, 'India');
   assert.equal(resolveRegion('London', 'UAE'), null);
+  assert.equal(resolveRegion('Dubai, UAE'), 'UAE');
+  assert.equal(resolveRegion('Remote', 'Saudi'), 'Remote');
+
+  const lemon = mapRemotiveJob({
+    id: 2091135,
+    title: 'Senior Back-end Developerusa',
+    company_name: 'Lemon.io',
+    candidate_required_location: 'Europe, USA, Canada, Australia, Singapore, Mexico, Saudi Arabia',
+    url: 'https://remotive.com/remote-jobs/software-development/senior-back-end-developerusa-2091135',
+    description: '<p>Remote backend role</p>',
+  });
+  assert.equal(lemon?.title, 'Senior Back-end Developer');
+  assert.equal(detachGluedPlace('Senior Back-end Developer USA'), 'Senior Back-end Developer USA');
+  assert.equal(lemon?.region, 'Remote');
+  assert.equal(lemon?.location, 'Europe, USA, Canada, Australia, Singapore, Mexico, Saudi Arabia');
 });

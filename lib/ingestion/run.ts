@@ -52,6 +52,9 @@ ON CONFLICT (dedupe_key) WHERE dedupe_key IS NOT NULL AND deleted_at IS NULL
 DO UPDATE SET
   last_seen_at = NOW(),
   updated_at = NOW(),
+  title = CASE WHEN jobs.source = 'direct' THEN jobs.title ELSE EXCLUDED.title END,
+  location = CASE WHEN jobs.source = 'direct' THEN jobs.location ELSE EXCLUDED.location END,
+  region = CASE WHEN jobs.source = 'direct' THEN jobs.region ELSE EXCLUDED.region END,
   description = CASE WHEN jobs.source = 'direct' THEN jobs.description ELSE EXCLUDED.description END,
   source_url = CASE WHEN jobs.source = 'direct' THEN jobs.source_url ELSE EXCLUDED.source_url END,
   apply_url = CASE WHEN jobs.source = 'direct' THEN jobs.apply_url ELSE EXCLUDED.apply_url END,
