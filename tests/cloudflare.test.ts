@@ -13,6 +13,11 @@ test('workers crons call the same routes as Vercel', () => {
   assert.match(config, /nodejs_compat/);
   assert.match(config, /2026-11-01/);
   assert.match(config, /"RESUME_STORE": "neon"/);
+  assert.match(config, /"EMAIL_FROM": "JobBrowser <noreply@jobbrowser.app>"/);
+  assert.doesNotMatch(config, /NEXTAUTH_URL/);
+  assert.doesNotMatch(config, /NEXT_PUBLIC_APP_BASE_URL/);
+  assert.doesNotMatch(config, /ADMIN_EMAIL/);
+  assert.doesNotMatch(config, /RESEND_API_KEY/);
   assert.doesNotMatch(config, /r2_buckets/);
   assert.match(config, /0 5 \* \* \*/);
 });

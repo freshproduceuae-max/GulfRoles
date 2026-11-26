@@ -166,7 +166,7 @@ Set Worker secrets with `npx wrangler secret put NAME`. Do not put them in git. 
 | `NEXT_PUBLIC_APP_BASE_URL` | GitHub Actions variable | `https://jobbrowser.jobbrowser.workers.dev` until the custom domain. Read as `vars.NEXT_PUBLIC_APP_BASE_URL`. |
 | `NEXT_PUBLIC_API_BASE_URL` | GitHub Actions variable | `https://jobbrowser.jobbrowser.workers.dev/api` until the custom domain. Read as `vars.NEXT_PUBLIC_API_BASE_URL`. |
 | `RESEND_API_KEY` | Worker secret | Mail. Optional. Unset means mail is logged and not sent. |
-| `EMAIL_FROM` | Worker var | `JobBrowser <noreply@jobbrowser.app>` after Resend verifies the domain. |
+| `EMAIL_FROM` | Plaintext var in `wrangler.jsonc` | `JobBrowser <noreply@jobbrowser.app>`. Do not rely on the dashboard; deploy replaces plaintext vars. |
 | `RESUME_STORE` | Worker var | `neon`. Set in `wrangler.jsonc`. CVs stay in Postgres. The `r2` code path is unused until a later plan adds a bucket binding. |
 | `SITE_PUBLIC` | Worker var | Leave unset. `true` is the only value that opens crawlers. |
 | `CAREERJET_AFFILIATE_ID`, `CAREERJET_USER_IP`, `JOOBLE_API_KEY`, `ADZUNA_APP_ID`, `ADZUNA_APP_KEY` | Worker secrets | Same partner keys as Vercel, when you have them. |
@@ -188,7 +188,7 @@ It also reads optional variables `NEXT_PUBLIC_ADSENSE_CLIENT`, `NEXT_PUBLIC_ADSE
 
 GitHub secrets the workflow reads are `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `DATABASE_URL`, and `DATABASE_URL_UNPOOLED`. Other runtime secrets (`CRON_SECRET`, `NEXTAUTH_SECRET`, `ADMIN_PASSWORD`, `ADMIN_EMAIL`, `RESEND_API_KEY`, partner keys) are Worker secrets only. Do not put an owner address in a `NEXT_PUBLIC_` variable.
 
-`CF_WORKER=1` and `RESUME_STORE=neon` are plain vars in `wrangler.jsonc`. The first selects Neon’s HTTP driver for reads. The second keeps CVs in Postgres. Deploy does not create an R2 bucket and does not declare an R2 binding.
+`wrangler deploy` replaces every plaintext Worker variable with the `vars` block in `wrangler.jsonc`. Secrets set with `wrangler secret put` stay. The file includes `CF_WORKER`, `RESUME_STORE`, and `EMAIL_FROM`. `NEXTAUTH_URL` is already a Worker secret, so it is not also a plaintext var. `NEXT_PUBLIC_APP_BASE_URL` is a GitHub Actions build variable, not a Worker var. `ADMIN_EMAIL`, `RESEND_API_KEY`, and the database URLs stay secrets and are not in the file. `SITE_PUBLIC` is omitted on purpose, so a dashboard text value is cleared and the site stays out of search. `LEGAL_FEEDS` is also omitted; when it is unset the app uses `remoteok,remotive`. AdSense and Sentry values are not plaintext vars. Deploy does not create an R2 bucket.
 
 ### Cutover
 
