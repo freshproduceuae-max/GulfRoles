@@ -20,7 +20,10 @@
   ],
   "vars": {
     "CF_WORKER": "1",
-    "RESUME_STORE": "neon"
+    "RESUME_STORE": "neon",
+    "EMAIL_FROM": "JobBrowser <noreply@jobbrowser.app>",
+    "NEXTAUTH_URL": "https://jobbrowser.jobbrowser.workers.dev",
+    "NEXT_PUBLIC_APP_BASE_URL": "https://jobbrowser.jobbrowser.workers.dev"
   },
   "triggers": {
     "crons": ["0 5 * * *", "0 16 * * *"]

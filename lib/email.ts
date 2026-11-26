@@ -47,7 +47,7 @@ export async function sendJobDigest(
  * Build HTML email content for job digest
  */
 function buildDigestHTML(jobs: FormattedJob[], unsubscribeToken: string): string {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_BASE_URL || 'http://localhost:3000';
+  const baseUrl = appBaseUrl();
   const unsubscribeUrl = `${baseUrl}/api/alerts/unsubscribe?token=${encodeURIComponent(unsubscribeToken)}`;
 
   const jobCardsHTML = jobs.map((job) => buildJobCard(job, baseUrl)).join('');
