@@ -50,7 +50,7 @@ export function migrationDatabaseUrl(): string | undefined {
 }
 
 /**
- * Workers cannot keep a connection pool across requests.
+ * Workers read through Neon’s HTTP driver instead of a pg pool.
  * Vercel still uses a small pool. Cloudflare sets CF_WORKER=1.
  */
 export function usesRequestScopedDb(
@@ -67,6 +67,39 @@ function databaseUrl(): string {
   const url = process.env.DATABASE_URL || process.env.POSTGRES_URL;
   if (!url) throw new Error('DATABASE_URL environment variable is not set');
   return url;
+}
+
+let queriesSeen = 0;
+
+/** Test hook. Counts query() calls, including the Worker HTTP driver. */
+export function resetQueryCount(): void {
+  queriesSeen = 0;
+}
+
+export function queryCount(): number {
+  return queriesSeen;
+}
+
+let neonQuery: ((text: string, values: unknown[]) => Promise<QueryResultRow[]>) | null = null;
+let neonUrl = '';
+
+/**
+ * Neon’s HTTP driver sends SQL with fetch. Workers then skip the pg TLS
+ * handshake, which was about 2.5s and most of the isolate CPU.
+ */
+async function queryWithNeon<T extends QueryResultRow>(
+  text: string,
+  values: unknown[]
+): Promise<QueryResult<T>> {
+  const url = databaseUrl();
+  if (!neonQuery || neonUrl !== url) {
+    const { neon } = await import('@neondatabase/serverless');
+    const sql = neon(url);
+    neonUrl = url;
+    neonQuery = (queryText, params) => sql.query(queryText, params);
+  }
+  const rows = (await neonQuery(text, values)) as T[];
+  return { rows, rowCount: rows.length, command: '', oid: 0, fields: [] };
 }
 
 async function withClient<T>(run: (client: Client) => Promise<T>): Promise<T> {
@@ -128,10 +161,11 @@ export async function query<T extends QueryResultRow = QueryResultRow>(
   config: QueryConfig | string,
   values?: any[]
 ): Promise<QueryResult<T>> {
+  queriesSeen += 1;
   if (usesRequestScopedDb()) {
-    return withClient((client) =>
-      typeof config === 'string' ? client.query<T>(config, values) : client.query<T>(config)
-    );
+    const text = typeof config === 'string' ? config : config.text;
+    const params = typeof config === 'string' ? values || [] : config.values || [];
+    return queryWithNeon<T>(text, params as unknown[]);
   }
 
   const pool = getPool();

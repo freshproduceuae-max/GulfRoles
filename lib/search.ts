@@ -241,8 +241,14 @@ export function buildSortClause(
   return 'ORDER BY jobs.posted_at DESC';
 }
 
+/** List cards only show two lines. The job page loads the full description. */
+const LISTING_DESCRIPTION_CHARS = 280;
+/** Stop counting once the listing is this long. Pagination stays exact below the cap. */
+const LISTING_COUNT_CAP = 1000;
+
 /**
- * Execute a job search with pagination
+ * One round trip: a capped count plus the page.
+ * The count stops at 1001 rows so it does not walk the whole live set.
  */
 export async function searchJobs(filters: SearchFilters): Promise<SearchResult> {
   const page = Math.max(1, filters.page || 1);
@@ -251,62 +257,91 @@ export async function searchJobs(filters: SearchFilters): Promise<SearchResult> 
 
   const { whereClause, params, queryParamIndex } = buildSearchQuery(filters);
   const sortClause = buildSortClause(filters.sort, queryParamIndex);
+  const limitParam = params.length + 1;
+  const offsetParam = params.length + 2;
 
-  // Get total count
-  const countSql = `
-    SELECT COUNT(*) as count
-    FROM jobs
-    ${whereClause}
-  `;
-
-  const countResult = await query<{ count: string }>(countSql, params);
-  const total = parseInt(countResult.rows[0]?.count || '0', 10);
-  const pages = Math.ceil(total / limit);
-
-  // Get jobs with pagination
   const jobsSql = `
     SELECT
-      jobs.id,
-      jobs.title,
-      jobs.description,
-      jobs.company_id,
-      jobs.company_name,
-      jobs.location,
-      jobs.region,
-      jobs.salary_min,
-      jobs.salary_max,
-      jobs.salary_currency,
-      jobs.salary_normalized_usd,
-      jobs.job_type,
-      jobs.source,
-      jobs.source_url,
-      jobs.employer_email,
-      jobs.employer_verified,
-      jobs.posted_at,
-      jobs.expires_at,
-      jobs.status,
-      jobs.equity_min_pct,
-      jobs.equity_max_pct,
-      jobs.bonus_structure,
-      jobs.benefits,
-      jobs.culture_notes,
-      jobs.created_at,
-      jobs.updated_at
-    FROM jobs
-    ${whereClause}
-    ${sortClause}
-    LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+      listed.id,
+      listed.title,
+      listed.description,
+      listed.company_id,
+      listed.company_name,
+      listed.location,
+      listed.region,
+      listed.salary_min,
+      listed.salary_max,
+      listed.salary_currency,
+      listed.salary_normalized_usd,
+      listed.job_type,
+      listed.source,
+      listed.source_url,
+      listed.employer_email,
+      listed.employer_verified,
+      listed.posted_at,
+      listed.expires_at,
+      listed.status,
+      listed.equity_min_pct,
+      listed.equity_max_pct,
+      listed.bonus_structure,
+      listed.benefits,
+      listed.culture_notes,
+      listed.created_at,
+      listed.updated_at,
+      stats.total
+    FROM (
+      SELECT COUNT(*)::int AS total
+      FROM (
+        SELECT 1
+        FROM jobs
+        ${whereClause}
+        LIMIT ${LISTING_COUNT_CAP + 1}
+      ) capped
+    ) stats
+    LEFT JOIN LATERAL (
+      SELECT
+        jobs.id,
+        jobs.title,
+        LEFT(jobs.description, ${LISTING_DESCRIPTION_CHARS}) AS description,
+        jobs.company_id,
+        jobs.company_name,
+        jobs.location,
+        jobs.region,
+        jobs.salary_min,
+        jobs.salary_max,
+        jobs.salary_currency,
+        jobs.salary_normalized_usd,
+        jobs.job_type,
+        jobs.source,
+        jobs.source_url,
+        jobs.employer_email,
+        jobs.employer_verified,
+        jobs.posted_at,
+        jobs.expires_at,
+        jobs.status,
+        jobs.equity_min_pct,
+        jobs.equity_max_pct,
+        jobs.bonus_structure,
+        jobs.benefits,
+        jobs.culture_notes,
+        jobs.created_at,
+        jobs.updated_at
+      FROM jobs
+      ${whereClause}
+      ${sortClause}
+      LIMIT $${limitParam} OFFSET $${offsetParam}
+    ) listed ON TRUE
   `;
 
-  const jobsParams = [...params, limit, offset];
-  const result = await query<JobRow>(jobsSql, jobsParams);
-
-  const jobs = result.rows.map(formatJobResult);
+  const result = await query<JobRow & { total: number | string }>(jobsSql, [...params, limit, offset]);
+  const rawTotal = Number(result.rows[0]?.total || 0);
+  const total = rawTotal > LISTING_COUNT_CAP ? LISTING_COUNT_CAP : rawTotal;
+  const jobs = result.rows.filter((row) => row.id).map(formatJobResult);
 
   return {
     jobs,
     total,
     page,
-    pages,
+    pages: Math.ceil(total / limit),
   };
 }

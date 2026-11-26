@@ -20,6 +20,7 @@
     "seed:production": "NODE_ENV=production tsx db/seed-production.ts"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.0.2",
     "@opennextjs/cloudflare": "^1.20.19",
     "@sentry/nextjs": "^9.47.2",
     "@types/bcryptjs": "^2.4.6",

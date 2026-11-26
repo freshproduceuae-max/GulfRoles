@@ -156,7 +156,7 @@ Set Worker secrets with `npx wrangler secret put NAME`. Do not put them in git. 
 | --- | --- | --- |
 | `CLOUDFLARE_API_TOKEN` | GitHub secret | Deploy token with Workers Scripts edit permission. R2 is not required. |
 | `CLOUDFLARE_ACCOUNT_ID` | GitHub secret | The account that owns the Worker. |
-| `DATABASE_URL` | GitHub secret and Worker secret | Pooled Neon URL. The Worker opens one short connection per query. |
+| `DATABASE_URL` | GitHub secret and Worker secret | Pooled Neon URL. The Worker reads through Neon’s HTTP driver, one round trip per query. Vercel still uses the pg pool. |
 | `DATABASE_URL_UNPOOLED` | GitHub secret | Direct Neon URL. Used only by `npm run migrate` in Actions. |
 | `NEXTAUTH_SECRET` | Worker secret | Admin session signing. |
 | `NEXTAUTH_URL` | Worker secret | `https://jobbrowser.jobbrowser.workers.dev` until the domain moves, then `https://jobbrowser.app`. |
@@ -191,7 +191,7 @@ It also reads optional variables `NEXT_PUBLIC_ADSENSE_CLIENT`, `NEXT_PUBLIC_ADSE
 
 GitHub secrets the workflow reads are `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `DATABASE_URL`, and `DATABASE_URL_UNPOOLED`. Other runtime secrets (`CRON_SECRET`, `NEXTAUTH_SECRET`, `ADMIN_PASSWORD`, `SENDGRID_API_KEY`, partner keys) are Worker secrets only.
 
-`CF_WORKER=1` and `RESUME_STORE=neon` are plain vars in `wrangler.jsonc`. The first tells the app not to keep a Postgres pool. The second keeps CVs in Postgres. Deploy does not create an R2 bucket and does not declare an R2 binding.
+`CF_WORKER=1` and `RESUME_STORE=neon` are plain vars in `wrangler.jsonc`. The first selects Neon’s HTTP driver for reads. The second keeps CVs in Postgres. Deploy does not create an R2 bucket and does not declare an R2 binding.
 
 ### Cutover
 
