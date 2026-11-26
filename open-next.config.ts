@@ -1,4 +1,4 @@
 import { defineCloudflareConfig } from '@opennextjs/cloudflare';
 
-// Default cache. CV files use the RESUMES R2 binding, not this cache.
+// Default cache. CVs stay in Postgres unless RESUME_STORE=r2 is set later.
 export default defineCloudflareConfig();

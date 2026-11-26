@@ -12,7 +12,8 @@ test('workers crons call the same routes as Vercel', () => {
   const config = fs.readFileSync('wrangler.jsonc', 'utf8');
   assert.match(config, /nodejs_compat/);
   assert.match(config, /2026-11-01/);
-  assert.match(config, /jobbrowser-resumes/);
+  assert.match(config, /"RESUME_STORE": "neon"/);
+  assert.doesNotMatch(config, /r2_buckets/);
   assert.match(config, /0 5 \* \* \*/);
 });
 

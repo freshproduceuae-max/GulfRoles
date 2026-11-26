@@ -154,22 +154,22 @@ Set Worker secrets with `npx wrangler secret put NAME`. Do not put them in git. 
 
 | Name | Where | Purpose |
 | --- | --- | --- |
-| `CLOUDFLARE_API_TOKEN` | GitHub secret | Deploy token with Workers and R2 edit permission. |
+| `CLOUDFLARE_API_TOKEN` | GitHub secret | Deploy token with Workers Scripts edit permission. R2 is not required. |
 | `CLOUDFLARE_ACCOUNT_ID` | GitHub secret | The account that owns the Worker. |
 | `DATABASE_URL` | GitHub secret and Worker secret | Pooled Neon URL. The Worker opens one short connection per query. |
 | `DATABASE_URL_UNPOOLED` | GitHub secret | Direct Neon URL. Used only by `npm run migrate` in Actions. |
 | `NEXTAUTH_SECRET` | Worker secret | Admin session signing. |
-| `NEXTAUTH_URL` | Worker secret | `https://jobbrowser.app` after the domain moves. |
+| `NEXTAUTH_URL` | Worker secret | `https://jobbrowser.jobbrowser.workers.dev` until the domain moves, then `https://jobbrowser.app`. |
 | `ADMIN_EMAIL` | Worker secret | Admin login. |
 | `ADMIN_PASSWORD` | Worker secret | Admin login. |
 | `CRON_SECRET` | Worker secret | Cron routes reject calls without `Authorization: Bearer` this value. The Worker cron sends it. |
-| `NEXT_PUBLIC_APP_BASE_URL` | Worker secret or var | Public origin. Also the sitemap host. |
-| `NEXT_PUBLIC_API_BASE_URL` | Worker secret or var | That origin plus `/api`. |
-| `NEXT_PUBLIC_APP_NAME` | Worker var | `JobBrowser` |
-| `NEXT_PUBLIC_CONTACT_EMAIL` | Worker var | The inbox you read. |
+| `NEXT_PUBLIC_APP_NAME` | GitHub Actions variable | `JobBrowser`. Read at build time as `vars.NEXT_PUBLIC_APP_NAME`. |
+| `NEXT_PUBLIC_APP_BASE_URL` | GitHub Actions variable | `https://jobbrowser.jobbrowser.workers.dev` until the custom domain. Read as `vars.NEXT_PUBLIC_APP_BASE_URL`. |
+| `NEXT_PUBLIC_API_BASE_URL` | GitHub Actions variable | `https://jobbrowser.jobbrowser.workers.dev/api` until the custom domain. Read as `vars.NEXT_PUBLIC_API_BASE_URL`. |
+| `NEXT_PUBLIC_CONTACT_EMAIL` | GitHub Actions variable | The inbox you read. Read as `vars.NEXT_PUBLIC_CONTACT_EMAIL`. |
 | `SENDGRID_API_KEY` | Worker secret | Mail. Optional until you send mail. |
 | `SENDGRID_FROM_EMAIL` | Worker var | Verified sender. |
-| `RESUME_STORE` | Worker var | Leave unset or `neon`. Set `r2` after the `jobbrowser-resumes` bucket exists. |
+| `RESUME_STORE` | Worker var | `neon`. Set in `wrangler.jsonc`. CVs stay in Postgres. The `r2` code path is unused until a later plan adds a bucket binding. |
 | `SITE_PUBLIC` | Worker var | Leave unset. `true` is the only value that opens crawlers. |
 | `CAREERJET_AFFILIATE_ID`, `CAREERJET_USER_IP`, `JOOBLE_API_KEY`, `ADZUNA_APP_ID`, `ADZUNA_APP_KEY` | Worker secrets | Same partner keys as Vercel, when you have them. |
 | `LEGAL_FEEDS` | Worker var | `remoteok,remotive`, or `none`. |
@@ -180,21 +180,30 @@ Set Worker secrets with `npx wrangler secret put NAME`. Do not put them in git. 
 
 Every other name in `.env.example` can stay unset. `GOOGLE_*`, `GITHUB_*`, `AWS_*`, `SUPABASE_*`, `INDEED_API_KEY`, and `LINKEDIN_API_KEY` are not used. Do not set `SEED_SAMPLE_JOBS` on the public Worker.
 
-`NEXT_PUBLIC_*` values are copied into the browser bundle when the Worker is built. Put them in GitHub Actions variables as well as Worker vars, then redeploy after a change. Runtime-only secrets (`DATABASE_URL`, `CRON_SECRET`, `NEXTAUTH_SECRET`, `ADMIN_PASSWORD`, `SENDGRID_API_KEY`, partner keys) are set on the Worker and are not needed in GitHub except `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `CLOUDFLARE_API_TOKEN`, and `CLOUDFLARE_ACCOUNT_ID`.
+The deploy workflow reads these GitHub Actions variables at build time, because Next copies `NEXT_PUBLIC_*` into the browser bundle:
 
-`CF_WORKER=1` is already a plain var in `wrangler.jsonc`. It tells the app not to keep a Postgres pool.
+- `NEXT_PUBLIC_APP_NAME`
+- `NEXT_PUBLIC_APP_BASE_URL`
+- `NEXT_PUBLIC_API_BASE_URL`
+- `NEXT_PUBLIC_CONTACT_EMAIL`
+
+It also reads optional variables `NEXT_PUBLIC_ADSENSE_CLIENT`, `NEXT_PUBLIC_ADSENSE_SLOT_HOME`, `NEXT_PUBLIC_ADSENSE_SLOT_SEARCH`, `NEXT_PUBLIC_ADSENSE_SLOT_JOB`, and `NEXT_PUBLIC_SENTRY_DSN`. Leave those unset until you use them. Until the custom domain, set the base URL variables to `https://jobbrowser.jobbrowser.workers.dev` and the API variable to that origin plus `/api`.
+
+GitHub secrets the workflow reads are `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `DATABASE_URL`, and `DATABASE_URL_UNPOOLED`. Other runtime secrets (`CRON_SECRET`, `NEXTAUTH_SECRET`, `ADMIN_PASSWORD`, `SENDGRID_API_KEY`, partner keys) are Worker secrets only.
+
+`CF_WORKER=1` and `RESUME_STORE=neon` are plain vars in `wrangler.jsonc`. The first tells the app not to keep a Postgres pool. The second keeps CVs in Postgres. Deploy does not create an R2 bucket and does not declare an R2 binding.
 
 ### Cutover
 
-1. In the Cloudflare dashboard, create an API token that can edit Workers scripts and R2 for this account. Put the token and account id in the GitHub repository secrets named above. Also add `DATABASE_URL` and `DATABASE_URL_UNPOOLED`.
-2. Create the Worker by merging this branch, or run `npm run deploy:cf` from your computer after `npx wrangler login`. The GitHub Action on `master` runs tests, then `npm run migrate`, then the Worker deploy. It does not migrate inside the Worker.
-3. Create the R2 bucket `jobbrowser-resumes` if the Action did not. Set the Worker secrets listed above. Set `RESUME_STORE` to `neon` first.
-4. Open the `*.workers.dev` URL. Confirm `/api/health` says the database is connected, `/` responds, and `/robots.txt` disallows `/` while `SITE_PUBLIC` is unset.
+1. In the Cloudflare dashboard, create an API token that can edit Workers scripts for this account. R2 is not enabled and is not required. Put the token and account id in the GitHub repository secrets named above. Also add `DATABASE_URL` and `DATABASE_URL_UNPOOLED`. Add GitHub Actions variables `NEXT_PUBLIC_APP_NAME`, `NEXT_PUBLIC_APP_BASE_URL`, `NEXT_PUBLIC_API_BASE_URL`, and `NEXT_PUBLIC_CONTACT_EMAIL`.
+2. Create the Worker by merging this branch, or run `npm run deploy:cf` from your computer after `npx wrangler login`. The GitHub Action on `master` runs tests, then `npm run migrate`, then the Worker deploy. It does not migrate inside the Worker and it does not create storage.
+3. Set the Worker secrets listed above. CVs stay in Postgres because `RESUME_STORE` is `neon`.
+4. Open `https://jobbrowser.jobbrowser.workers.dev`. Confirm `/api/health` says the database is connected, `/` responds, and `/robots.txt` disallows `/` while `SITE_PUBLIC` is unset.
 5. DNS is at Porkbun. Add the domain `jobbrowser.app` to the Cloudflare account. At Porkbun, change the nameservers to the two Cloudflare nameservers shown for the zone. Wait until Cloudflare says the zone is active.
 6. Attach `jobbrowser.app` and `www.jobbrowser.app` as custom domains on the Worker. Set `NEXTAUTH_URL` and `NEXT_PUBLIC_APP_BASE_URL` to `https://jobbrowser.app`, then redeploy.
 7. Hit `/api/health`, a job page, employer login, and `/robots.txt` on the custom domain.
 8. When that looks right, remove the Vercel project or at least its crons and domain. Until then both hosts can run the daily jobs. Retire Vercel before the next `0 5` or `0 16` UTC cron so ingestion and alert mail do not run twice.
-9. After a day of stable traffic, set `RESUME_STORE=r2` if you want new CVs in R2. Existing CVs stay in Postgres and still download.
+9. Leave `RESUME_STORE` at `neon`. The R2 adapter stays in the code for a later plan. This deploy does not use it.
 
 ### Free plan limits
 

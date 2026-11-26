@@ -18,14 +18,9 @@
       "service": "jobbrowser"
     }
   ],
-  "r2_buckets": [
-    {
-      "binding": "RESUMES",
-      "bucket_name": "jobbrowser-resumes"
-    }
-  ],
   "vars": {
-    "CF_WORKER": "1"
+    "CF_WORKER": "1",
+    "RESUME_STORE": "neon"
   },
   "triggers": {
     "crons": ["0 5 * * *", "0 16 * * *"]
