@@ -14,6 +14,9 @@ function withRobots(response: NextResponse, pathname: string): NextResponse {
     pathname.startsWith('/admin') ||
     pathname.startsWith('/employer') ||
     pathname.startsWith('/application-status') ||
+    pathname.startsWith('/profile') ||
+    pathname.startsWith('/invites') ||
+    pathname.startsWith('/interviews') ||
     pathname.startsWith('/api');
   if (!isSitePublic() || privateArea) {
     response.headers.set('X-Robots-Tag', 'noindex, nofollow');

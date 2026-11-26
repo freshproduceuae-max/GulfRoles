@@ -5,6 +5,7 @@ import { transaction } from '@/lib/db';
 import { regionFromParam } from '@/lib/regions';
 import { serverErrorResponse } from '@/lib/http';
 import { getEmployerSession } from '@/lib/access';
+import { canRecruit, companyRole } from '@/lib/employer/roles';
 import { toUsd } from '@/lib/ingestion/normalize';
 
 /**
@@ -223,6 +224,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         { error: 'Sign in with the email link before posting a job.' },
         { status: 401 }
       );
+    }
+    const role = await companyRole(session.companyId, session.email);
+    if (!canRecruit(role)) {
+      return NextResponse.json({ error: 'Your role can view jobs but cannot post them.' }, { status: 403 });
     }
 
     const body = await request.json();

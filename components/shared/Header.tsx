@@ -81,6 +81,9 @@ export default function Header() {
             <Link href="/saved" className="text-sm font-medium text-gray-700 dark:text-gray-200">
               Saved
             </Link>
+            <Link href="/profile" className="text-sm font-medium text-gray-700 dark:text-gray-200">
+              Profile
+            </Link>
             <Link href="/#job-alerts" className="text-sm font-medium text-gray-700 dark:text-gray-200">
               Alerts
             </Link>
@@ -154,6 +157,9 @@ export default function Header() {
               </Link>
               <Link href="/saved" className="block w-full px-4 py-2 text-sm font-medium text-center border rounded-lg">
                 Saved
+              </Link>
+              <Link href="/profile" className="block w-full px-4 py-2 text-sm font-medium text-center border rounded-lg">
+                Profile
               </Link>
               <Link href="/#job-alerts" className="block w-full px-4 py-2 text-sm font-medium text-center border rounded-lg">
                 Alerts

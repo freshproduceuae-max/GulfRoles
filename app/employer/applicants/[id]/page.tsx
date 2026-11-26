@@ -32,6 +32,7 @@ export default function ApplicantPage() {
   const [detail, setDetail] = useState<Detail | null>(null);
   const [note, setNote] = useState('');
   const [message, setMessage] = useState({ subject: '', body: '' });
+  const [interviewLink, setInterviewLink] = useState('');
   const [error, setError] = useState('');
 
   async function load() {
@@ -116,6 +117,33 @@ export default function ApplicantPage() {
         <h2 className="font-semibold mb-2">CV</h2>
         <p className="mb-2"><a className="text-primary-700 underline" href={`/api/applications/${app.id}/resume`}>Download {app.resume_filename || 'CV'}</a></p>
         {pdf ? <iframe title="CV preview" className="w-full h-96 border" src={`/api/applications/${app.id}/resume?inline=1`} /> : <p>Open the downloaded Word file to read it. The text is still searchable in the pipeline.</p>}
+      </section>
+      <section className="bg-white rounded-lg shadow p-4">
+        <h2 className="font-semibold mb-2">Interview times</h2>
+        <form className="space-y-2" onSubmit={async (event) => {
+          event.preventDefault();
+          const form = new FormData(event.currentTarget);
+          const response = await fetch('/api/employer/interviews', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              application_id: app.id,
+              slots: [{ starts_at: form.get('starts_at'), ends_at: form.get('ends_at') }],
+            }),
+          });
+          const data = await response.json();
+          setError(response.ok ? '' : data.error || 'Could not propose times');
+          if (response.ok) setInterviewLink(data.dev_interview_link || 'Times emailed to the candidate.');
+        }}>
+          <label className="block text-sm">Start
+            <input type="datetime-local" name="starts_at" aria-label="Slot start" required className="mt-1 w-full border rounded px-3 py-2" />
+          </label>
+          <label className="block text-sm">End
+            <input type="datetime-local" name="ends_at" aria-label="Slot end" required className="mt-1 w-full border rounded px-3 py-2" />
+          </label>
+          <button type="submit" className="px-3 py-2 bg-primary-500 text-white rounded">Propose interview</button>
+          {interviewLink ? <p className="break-all">{interviewLink}</p> : null}
+        </form>
       </section>
       <section className="bg-white rounded-lg shadow p-4">
         <h2 className="font-semibold mb-2">Notes</h2>
