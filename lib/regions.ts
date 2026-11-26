@@ -63,7 +63,7 @@ export const REGION_LIST = [
 
 export type RegionInfo = (typeof REGION_LIST)[number];
 export type RegionSlug = RegionInfo['slug'];
-export type DbRegion = RegionInfo['db'];
+export type DbRegion = RegionInfo['db'] | 'Remote';
 
 const ALIASES: Record<string, RegionSlug> = {
   ae: 'ae',

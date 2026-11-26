@@ -17,18 +17,40 @@ const REGION_HINTS: Record<string, DbRegion> = {
   usa: 'USA',
 };
 
+const PLACE_RULES: Array<{ region: DbRegion; pattern: RegExp }> = [
+  { region: 'Saudi', pattern: /\b(?:saudi|riyadh|jeddah|dammam|khobar)\b/ },
+  {
+    region: 'India',
+    pattern: /\b(?:india|bengaluru|bangalore|hyderabad|mumbai|delhi|chennai|pune|gurugram|gurgaon|noida)\b/,
+  },
+  { region: 'Australia', pattern: /\b(?:australia|sydney|melbourne|brisbane|perth)\b/ },
+  {
+    region: 'USA',
+    pattern: /\b(?:usa|united states|new york|san francisco|seattle|austin|chicago|boston)\b/,
+  },
+  { region: 'UAE', pattern: /\b(?:uae|dubai|abu dhabi|sharjah|ajman|ras al khaimah)\b/ },
+];
+
+const REMOTE_WORD = /\b(?:remote|worldwide|anywhere|wfh|work from home)\b/;
+
+/**
+ * Remotive slugs sometimes glue a place onto the title: "Developerusa".
+ * A separated "Developer USA" is left alone.
+ */
+export function detachGluedPlace(title: string): string {
+  return title.replace(/([A-Za-z])(usa|uae|uk|india|saudi|australia)$/i, '$1').trim();
+}
+
 export function resolveRegion(location: string, hint?: string | null): DbRegion | null {
   const loc = location.toLowerCase();
-  if (/saudi|riyadh|jeddah|dammam|khobar/.test(loc)) return 'Saudi';
-  if (/india|bengaluru|bangalore|hyderabad|mumbai|delhi|chennai|pune|gurugram|gurgaon|noida/.test(loc)) {
-    return 'India';
-  }
-  if (/australia|sydney|melbourne|brisbane|perth/.test(loc)) return 'Australia';
-  if (/\busa\b|united states|new york|san francisco|seattle|austin|chicago|boston/.test(loc)) return 'USA';
-  if (/uae|dubai|abu dhabi|sharjah|ajman|ras al khaimah/.test(loc)) return 'UAE';
-  const hinted = hint ? REGION_HINTS[hint.trim().toLowerCase()] || (hint as DbRegion) : null;
-  const known = hinted && ['UAE', 'Saudi', 'India', 'Australia', 'USA'].includes(hinted) ? hinted : null;
-  if (known && (!location.trim() || /remote|worldwide|anywhere/.test(loc))) return known;
+  if (REMOTE_WORD.test(loc)) return 'Remote';
+
+  const matches = [...new Set(PLACE_RULES.filter((rule) => rule.pattern.test(loc)).map((rule) => rule.region))];
+  if (matches.length > 1) return 'Remote';
+  if (matches.length === 1) return matches[0];
+
+  const hinted = hint ? REGION_HINTS[hint.trim().toLowerCase()] : null;
+  if (!location.trim() && hinted) return hinted;
   return null;
 }
 
@@ -51,7 +73,7 @@ function listingFrom(input: {
   const row = finalizeListing({
     source: input.source,
     externalId: externalId(input.source, input.externalId, input.applyUrl),
-    title: input.title,
+    title: detachGluedPlace(input.title),
     description: stripHtml(input.description || input.title),
     companyName: input.companyName,
     location: input.location || region,
@@ -161,7 +183,7 @@ export function mapRemoteOkJob(raw: Record<string, unknown>): NormalizedListing 
     title: String(raw.position),
     description: String(raw.description || ''),
     companyName: String(raw.company || 'Remote OK employer'),
-    location: String(raw.location || ''),
+    location: String(raw.location || 'Remote'),
     applyUrl: String(raw.url || raw.apply_url || ''),
     postedAt: raw.date ? String(raw.date) : null,
   });
@@ -174,7 +196,7 @@ export function mapRemotiveJob(raw: Record<string, unknown>): NormalizedListing 
     title: String(raw.title || ''),
     description: String(raw.description || ''),
     companyName: String(raw.company_name || 'Remotive employer'),
-    location: String(raw.candidate_required_location || ''),
+    location: String(raw.candidate_required_location || 'Remote'),
     applyUrl: String(raw.url || ''),
     jobType: String(raw.job_type || ''),
   });
