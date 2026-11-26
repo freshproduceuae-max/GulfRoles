@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { ReactNode } from 'react';
 
 interface AdminLayoutProps {
@@ -26,12 +27,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </div>
           <div className="flex items-center space-x-4">
             <nav className="hidden sm:flex space-x-6">
-              <a href="/admin/moderation" className="text-sm text-gray-600 hover:text-gray-900 transition">
+              <Link href="/admin/moderation" className="text-sm text-gray-600 hover:text-gray-900 transition">
                 Moderation
-              </a>
-              <a href="/admin/revenue" className="text-sm text-gray-600 hover:text-gray-900 transition">
+              </Link>
+              <Link href="/admin/revenue" className="text-sm text-gray-600 hover:text-gray-900 transition">
                 Clicks
-              </a>
+              </Link>
             </nav>
           </div>
         </div>

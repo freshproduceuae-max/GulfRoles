@@ -9,9 +9,10 @@ import { regionByDb } from '@/lib/regions';
 
 export const dynamic = 'force-dynamic';
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   try {
-    const job = await getJobById(params.id);
+    const { id } = await params;
+    const job = await getJobById(id);
     if (!job || !isPublicListing(job)) return { title: 'Job not found | JobBrowser' };
     const description = job.description.slice(0, 160);
     const url = `${appBaseUrl()}/jobs/${job.id}`;
@@ -26,11 +27,12 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   }
 }
 
-export default async function JobPage({ params }: { params: { id: string } }) {
+export default async function JobPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   let job = null;
   let unavailable = false;
   try {
-    job = await getJobById(params.id);
+    job = await getJobById(id);
   } catch (error) {
     console.error('Job page database error', error instanceof Error ? error.message : error);
     unavailable = true;

@@ -1,0 +1,6 @@
+NEXTJS_ENV=development
+# Copy to .dev.vars for `wrangler dev`. Do not commit real values.
+# DATABASE_URL=
+# CRON_SECRET=
+# NEXTAUTH_SECRET=
+# SITE_PUBLIC=

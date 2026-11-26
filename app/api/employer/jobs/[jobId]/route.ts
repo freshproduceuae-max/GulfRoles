@@ -7,9 +7,10 @@ import { regionFromParam } from '@/lib/regions';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { jobId: string } }
+  { params: paramsPromise }: { params: Promise<{ jobId: string }> }
 ): Promise<NextResponse> {
   try {
+    const params = await paramsPromise;
     const session = await getEmployerSession(request);
     if (!session) return NextResponse.json({ error: 'Sign in first.' }, { status: 401 });
     const job = await ownedDirectJob(session.companyId, params.jobId);
@@ -27,9 +28,10 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { jobId: string } }
+  { params: paramsPromise }: { params: Promise<{ jobId: string }> }
 ): Promise<NextResponse> {
   try {
+    const params = await paramsPromise;
     const session = await getEmployerSession(request);
     if (!session) return NextResponse.json({ error: 'Sign in first.' }, { status: 401 });
     const job = await ownedDirectJob(session.companyId, params.jobId);

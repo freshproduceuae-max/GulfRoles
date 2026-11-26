@@ -6,9 +6,10 @@ import { resumeStorageFromEnv, type ResumeStoreName } from '@/lib/storage';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params: paramsPromise }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   try {
+    const params = await paramsPromise;
     const row = await queryOne<{
       job_id: string;
       resume_store: ResumeStoreName | null;
@@ -28,11 +29,11 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const store = row.resume_store === 'blob' ? 'blob' : 'neon';
-    const storage = store === 'blob' ? resumeStorageFromEnv({ ...process.env, RESUME_STORE: 'blob' }) : resumeStorageFromEnv({ ...process.env, RESUME_STORE: 'neon' });
+    const store = row.resume_store === 'blob' || row.resume_store === 'r2' ? row.resume_store : 'neon';
+    const storage = resumeStorageFromEnv({ ...process.env, RESUME_STORE: store });
     const file = await storage.get({
       store,
-      key: store === 'blob' ? row.resume_key || '' : params.id,
+      key: store === 'neon' ? params.id : row.resume_key || '',
     });
 
     if (!file) {

@@ -16,7 +16,7 @@ dotenv.config();
 async function main() {
   if (!shouldRunMigrations()) {
     console.log(
-      'Skipping migrations. Preview and local builds do not change the shared database. Production (VERCEL_ENV=production) runs them. Set RUN_MIGRATIONS=true to apply them on purpose.'
+      'Skipping migrations. Preview and local builds do not change the shared database. They run when VERCEL_ENV=production, DEPLOY_ENV=production, or RUN_MIGRATIONS=true.'
     );
     return;
   }

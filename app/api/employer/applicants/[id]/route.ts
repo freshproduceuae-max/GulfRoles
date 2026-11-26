@@ -18,9 +18,10 @@ async function loadApplicant(companyId: string, applicationId: string) {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params: paramsPromise }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   try {
+    const params = await paramsPromise;
     const session = await getEmployerSession(request);
     if (!session) return NextResponse.json({ error: 'Sign in first.' }, { status: 401 });
     const application = await loadApplicant(session.companyId, params.id);
@@ -45,9 +46,10 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params: paramsPromise }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   try {
+    const params = await paramsPromise;
     const session = await getEmployerSession(request);
     if (!session) return NextResponse.json({ error: 'Sign in first.' }, { status: 401 });
     const application = await loadApplicant(session.companyId, params.id);

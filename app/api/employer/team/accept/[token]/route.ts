@@ -12,9 +12,10 @@ function sameHostRedirect(request: NextRequest, path: string): NextResponse {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { token: string } }
+  { params: paramsPromise }: { params: Promise<{ token: string }> }
 ): Promise<NextResponse> {
   try {
+    const params = await paramsPromise;
     const member = await query<{ company_id: string; email: string }>(
       `SELECT company_id, email FROM company_members
        WHERE invite_token = $1 AND invite_expires > NOW()`,

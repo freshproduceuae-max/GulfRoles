@@ -21,7 +21,8 @@ const STATUS_LABEL: Record<string, string> = {
   hired: 'Hired',
 };
 
-export default async function ApplicationStatusPage({ params }: { params: { token: string } }) {
+export default async function ApplicationStatusPage({ params }: { params: Promise<{ token: string }> }) {
+  const { token } = await params;
   const row = await queryOne<{
     status: string;
     applicant_name: string;
@@ -33,7 +34,7 @@ export default async function ApplicationStatusPage({ params }: { params: { toke
      FROM applications a
      JOIN jobs j ON j.id = a.job_id
      WHERE a.status_token = $1`,
-    [params.token]
+    [token]
   );
 
   if (!row) notFound();

@@ -1,5 +1,6 @@
 import JobPostingWizard from '@/components/employer/JobPostingWizard';
 import { cookies } from 'next/headers';
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 export const metadata = {
@@ -7,9 +8,8 @@ export const metadata = {
   description: 'Post job listings on JobBrowser',
 };
 
-export default function PostJobPage() {
-  // Check if employer has valid session
-  const cookieStore = cookies();
+export default async function PostJobPage() {
+  const cookieStore = await cookies();
   const sessionToken = cookieStore.get('employer_session')?.value;
   const employerId = cookieStore.get('employer_id')?.value;
 
@@ -25,8 +25,8 @@ export default function PostJobPage() {
           <h1 className="text-3xl font-bold text-gray-900">Post a Job</h1>
           <p className="text-gray-600 mt-1">Fill in the details below to post your job listing. Connecting an existing Greenhouse, Lever, Ashby, or Workable board is separate and also free.</p>
           <p className="text-sm mt-2 flex flex-wrap gap-4">
-            <a href="/employer/jobs" className="text-blue-800 underline">Your jobs</a>
-            <a href="/employer/sources" className="text-blue-800 underline">Connect a careers board</a>
+            <Link href="/employer/jobs" className="text-blue-800 underline">Your jobs</Link>
+            <Link href="/employer/sources" className="text-blue-800 underline">Connect a careers board</Link>
           </p>
         </div>
       </div>

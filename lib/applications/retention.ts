@@ -1,5 +1,5 @@
 import { query } from '@/lib/db';
-import { createBlobResumeStorage, createNeonResumeStorage, type ResumeStorage } from '@/lib/storage/resume-store';
+import { createBlobResumeStorage, createNeonResumeStorage, createR2ResumeStorage, type ResumeStorage } from '@/lib/storage/resume-store';
 
 export const RESUME_RETENTION = '12 months';
 
@@ -27,9 +27,9 @@ export async function purgeExpiredApplications(now = new Date()): Promise<{ dele
   const deletedIds: string[] = [];
   for (const row of expired.rows) {
     try {
-      if (row.resume_store === 'blob' && row.resume_key) {
-        const storage = storageFor('blob');
-        await storage.delete({ store: 'blob', key: row.resume_key });
+      if ((row.resume_store === 'blob' || row.resume_store === 'r2') && row.resume_key) {
+        const storage = storageFor(row.resume_store);
+        await storage.delete({ store: row.resume_store, key: row.resume_key });
       }
       deletedIds.push(row.id);
     } catch (error) {
@@ -52,5 +52,6 @@ function storageFor(store: string): ResumeStorage {
   if (store === 'blob') {
     return createBlobResumeStorage(process.env.BLOB_READ_WRITE_TOKEN || '');
   }
+  if (store === 'r2') return createR2ResumeStorage();
   return createNeonResumeStorage();
 }

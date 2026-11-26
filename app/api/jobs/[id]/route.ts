@@ -5,9 +5,10 @@ import { serverErrorResponse } from '@/lib/http';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params: paramsPromise }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   try {
+    const params = await paramsPromise;
     const job = await getJobById(params.id);
     if (!job) {
       return NextResponse.json({ error: 'Job not found' }, { status: 404 });

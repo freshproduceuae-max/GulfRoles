@@ -22,7 +22,8 @@ interface ApplicationRow {
   updated_at: string;
 }
 
-export default async function InboxPage({ params }: { params: { jobId: string } }) {
+export default async function InboxPage({ params }: { params: Promise<{ jobId: string }> }) {
+  const { jobId } = await params;
   const session = await readEmployerSession();
   if (!session) redirect('/employer/login');
 
@@ -36,7 +37,7 @@ export default async function InboxPage({ params }: { params: { jobId: string } 
     `SELECT id, title, company_name, location, status
      FROM jobs
      WHERE id = $1 AND company_id = $2 AND deleted_at IS NULL`,
-    [params.jobId, session.companyId]
+    [jobId, session.companyId]
   );
   if (!job) notFound();
 

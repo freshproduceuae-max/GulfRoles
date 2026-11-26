@@ -7,10 +7,6 @@ export function initSentry() {
       dsn: process.env.SENTRY_DSN,
       environment: process.env.NODE_ENV || "development",
       tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
-      integrations: [
-        new Sentry.Integrations.Postgres(),
-        new Sentry.Integrations.Http({ tracing: true }),
-      ],
       beforeSend(event, hint) {
         // Filter out certain errors in development
         if (process.env.NODE_ENV === "development") {

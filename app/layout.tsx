@@ -11,7 +11,7 @@ export const viewport: Viewport = {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  void headers()
+  await headers()
   const sitePublic = isSitePublic()
   return {
     metadataBase: new URL(process.env.NEXT_PUBLIC_APP_BASE_URL || 'https://jobbrowser.app'),

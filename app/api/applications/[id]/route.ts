@@ -26,9 +26,10 @@ async function authorize(request: NextRequest, applicationId: string): Promise<
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params: paramsPromise }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   try {
+    const params = await paramsPromise;
     const access = await authorize(request, params.id);
     if (!access.ok) return access.response;
 
@@ -41,9 +42,10 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params: paramsPromise }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   try {
+    const params = await paramsPromise;
     const access = await authorize(request, params.id);
     if (!access.ok) return access.response;
 

@@ -7,14 +7,16 @@ import { regionBySlug } from '@/lib/regions';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export function generateMetadata({ params }: { params: { region: string } }): Metadata {
-  const region = regionBySlug(params.region);
+export async function generateMetadata({ params }: { params: Promise<{ region: string }> }): Promise<Metadata> {
+  const { region: slug } = await params;
+  const region = regionBySlug(slug);
   if (!region) return { title: 'Jobs | JobBrowser' };
   return regionMetadata(region);
 }
 
-export default async function RegionPage({ params }: { params: { region: string } }) {
-  const region = regionBySlug(params.region);
+export default async function RegionPage({ params }: { params: Promise<{ region: string }> }) {
+  const { region: slug } = await params;
+  const region = regionBySlug(slug);
   if (!region) notFound();
   let jobs: Awaited<ReturnType<typeof getFeaturedJobs>> = [];
   try {

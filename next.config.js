@@ -1,7 +1,9 @@
 import { withSentryConfig } from '@sentry/nextjs';
+import { initOpenNextCloudflareForDev } from '@opennextjs/cloudflare';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  devIndicators: false,
   images: {
     remotePatterns: [],
     formats: ['image/avif', 'image/webp'],
@@ -117,3 +119,7 @@ const sentryConfig = {
 export default sentryTokenIsUsable(process.env.SENTRY_AUTH_TOKEN)
   ? withSentryConfig(nextConfig, sentryConfig)
   : nextConfig;
+
+if (process.env.NODE_ENV !== 'production') {
+  initOpenNextCloudflareForDev();
+}

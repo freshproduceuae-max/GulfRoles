@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
-export default function VerifyPage({ params }: { params: { token: string } }) {
-  redirect(`/api/auth/employer-verify/${params.token}`);
+export default async function VerifyPage({ params }: { params: Promise<{ token: string }> }) {
+  const { token } = await params;
+  redirect(`/api/auth/employer-verify/${token}`);
 }

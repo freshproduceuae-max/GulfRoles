@@ -5,12 +5,14 @@
  * `npm run migrate` sets that flag. A local `npm run build` does not.
  */
 export function shouldRunMigrations(
-  env: { RUN_MIGRATIONS?: string; VERCEL_ENV?: string } = {
+  env: { RUN_MIGRATIONS?: string; VERCEL_ENV?: string; DEPLOY_ENV?: string } = {
     RUN_MIGRATIONS: process.env.RUN_MIGRATIONS,
     VERCEL_ENV: process.env.VERCEL_ENV,
+    DEPLOY_ENV: process.env.DEPLOY_ENV,
   }
 ): boolean {
   if (env.RUN_MIGRATIONS === 'true') return true;
   if (env.VERCEL_ENV === 'production') return true;
+  if (env.DEPLOY_ENV === 'production') return true;
   return false;
 }
