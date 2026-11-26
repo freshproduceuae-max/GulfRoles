@@ -1,10 +1,12 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
+import { CONTACT_TOPICS, type ContactTopic } from '@/lib/contact';
 
-export default function ContactForm({ contact }: { contact: string }) {
+export default function ContactForm({ initialTopic }: { initialTopic: ContactTopic }) {
   const [status, setStatus] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [done, setDone] = useState(false);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -17,16 +19,19 @@ export default function ContactForm({ contact }: { contact: string }) {
       body: JSON.stringify({
         name: form.get('name'),
         email: form.get('email'),
+        topic: form.get('topic'),
         message: form.get('message'),
+        website: form.get('website'),
       }),
     });
     const data = await response.json();
     setPending(false);
     if (!response.ok) {
-      setStatus(data.message || data.error || `Email ${contact} directly.`);
+      setStatus(data.error || 'We could not save your message.');
       return;
     }
-    setStatus('Message sent.');
+    setDone(true);
+    setStatus('Message received. We will reply to the address you entered.');
     event.currentTarget.reset();
   }
 
@@ -34,20 +39,34 @@ export default function ContactForm({ contact }: { contact: string }) {
     <form onSubmit={onSubmit} className="space-y-3 max-w-lg">
       <label className="block text-sm font-medium">
         Name
-        <input name="name" required className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900" />
+        <input name="name" required autoComplete="name" className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900" />
       </label>
       <label className="block text-sm font-medium">
-        Email
-        <input name="email" type="email" required className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900" />
+        Your email
+        <input name="email" type="email" required autoComplete="email" className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900" />
+      </label>
+      <label className="block text-sm font-medium">
+        Topic
+        <select name="topic" defaultValue={initialTopic} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900">
+          {CONTACT_TOPICS.map((topic) => (
+            <option key={topic.id} value={topic.id}>
+              {topic.label}
+            </option>
+          ))}
+        </select>
       </label>
       <label className="block text-sm font-medium">
         Message
         <textarea name="message" required minLength={10} rows={5} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900" />
       </label>
-      <button type="submit" disabled={pending} className="rounded-lg bg-primary-500 px-4 py-2 font-medium text-white disabled:opacity-60">
+      <label className="absolute left-[-9999px]" aria-hidden="true">
+        Website
+        <input name="website" tabIndex={-1} autoComplete="off" />
+      </label>
+      <button type="submit" disabled={pending || done} className="rounded-lg bg-primary-500 px-4 py-2 font-medium text-white disabled:opacity-60">
         {pending ? 'Sending…' : 'Send'}
       </button>
-      {status && <p>{status}</p>}
+      {status && <p role="status">{status}</p>}
     </form>
   );
 }

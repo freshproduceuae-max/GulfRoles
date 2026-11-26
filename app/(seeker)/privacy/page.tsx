@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { OperatorNotice, PageSection, StaticPage, InPageLink } from '@/components/content/StaticPage';
-import { contactEmail } from '@/lib/site';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy | JobBrowser',
@@ -8,7 +7,6 @@ export const metadata: Metadata = {
 };
 
 export default function PrivacyPage() {
-  const email = contactEmail();
   return (
     <StaticPage
       title="Privacy policy"
@@ -28,7 +26,7 @@ export default function PrivacyPage() {
           Only the employer who posted that job, and a JobBrowser admin, can open or download the CV. Candidates can see the application status. They cannot download the file from the status page. JobBrowser does not sell CVs, resumes, or applicant lists.
         </p>
         <p>
-          An application and its CV are deleted 12 months after the application date. You can ask for deletion sooner by emailing {email}. We delete the application record and the file, except where a copy must be kept for a legal claim or a security log.
+          An application and its CV are deleted 12 months after the application date. You can ask for deletion sooner with the <InPageLink href="/contact?topic=legal-privacy">contact form</InPageLink>. We delete the application record and the file, except where a copy must be kept for a legal claim or a security log.
         </p>
         <p>
           Applications to Careerjet, Jooble, or Adzuna happen on those sites. We do not receive the CV you submit there. We record that a click left JobBrowser so we can count affiliate referrals.
@@ -51,7 +49,7 @@ export default function PrivacyPage() {
       </PageSection>
       <PageSection heading="Requests">
         <p>
-          To unsubscribe, use the link in a digest. To ask for deletion of an alert, an application, or an employer post, email {email}. We will delete the records we hold, except where we must keep a copy for a legal claim or for security logs.
+          To unsubscribe, use the link in a digest. To ask for deletion of an alert, an application, or an employer post, use the <InPageLink href="/contact?topic=legal-privacy">contact form</InPageLink>. We will delete the records we hold, except where we must keep a copy for a legal claim or for security logs.
         </p>
       </PageSection>
     </StaticPage>

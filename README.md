@@ -44,6 +44,8 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
+Mail uses the Resend HTTP API (`RESEND_API_KEY`, `EMAIL_FROM`). If the key is unset, messages are logged and not sent. The public site has a contact form and does not publish an owner address. `ADMIN_EMAIL` is server-only and is used for admin sign-in and optional form notifications.
+
 ### Type Checking
 
 Run TypeScript type checking:

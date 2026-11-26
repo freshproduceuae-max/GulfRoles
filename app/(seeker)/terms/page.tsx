@@ -43,7 +43,7 @@ export default function TermsPage() {
           Listings are provided as received from employers and partners. We do not promise that a job is still open, that a salary is accurate, or that an application will be read. The site is provided as available. To the extent the law allows, the operator is not liable for hiring decisions or for partner sites.
         </p>
         <p>
-          The <InPageLink href="/privacy">privacy policy</InPageLink> explains what we store.
+          The <InPageLink href="/privacy">privacy policy</InPageLink> explains what we store. Legal questions use the <InPageLink href="/contact?topic=legal-privacy">contact form</InPageLink>.
         </p>
       </PageSection>
     </StaticPage>

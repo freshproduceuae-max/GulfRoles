@@ -1,17 +1,25 @@
 /**
- * Email utility for sending job digest emails via SendGrid
+ * Transactional email through Resend's HTTP API.
+ * Works on Cloudflare Workers and Vercel. If RESEND_API_KEY is unset, mail is logged and not sent.
  */
 
 import { FormattedJob } from './search';
+import { appBaseUrl, contactFormUrl } from './site';
 
-interface SendGridResponse {
+export const DEFAULT_EMAIL_FROM = 'JobBrowser <noreply@jobbrowser.app>';
+
+export function emailFrom(): string {
+  return process.env.EMAIL_FROM?.trim() || DEFAULT_EMAIL_FROM;
+}
+
+interface EmailSendResult {
   success: boolean;
   messageId?: string;
   error?: string;
 }
 
 /**
- * Send a job digest email using SendGrid
+ * Send a weekly job digest. Both HTML and text are included.
  * @param email - Recipient email address
  * @param jobs - Array of job listings to include
  * @param subject - Email subject line
@@ -23,72 +31,16 @@ export async function sendJobDigest(
   jobs: FormattedJob[],
   subject: string,
   unsubscribeToken: string
-): Promise<SendGridResponse> {
-  const sendgridApiKey = process.env.SENDGRID_API_KEY;
-
-  if (!sendgridApiKey) {
-    console.error('SENDGRID_API_KEY is not configured');
-    return {
-      success: false,
-      error: 'Email service not configured',
-    };
-  }
-
-  try {
-    // Limit to 10 jobs per digest
-    const jobsToSend = jobs.slice(0, 10);
-
-    const htmlContent = buildDigestHTML(jobsToSend, unsubscribeToken);
-
-    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${sendgridApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        personalizations: [
-          {
-            to: [{ email }],
-            subject,
-          },
-        ],
-        from: {
-          email: process.env.SENDGRID_FROM_EMAIL || 'noreply@jobbrowser.app',
-          name: 'JobBrowser Alerts',
-        },
-        content: [
-          {
-            type: 'text/html',
-            value: htmlContent,
-          },
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('SendGrid error:', response.status, errorText);
-      return {
-        success: false,
-        error: `SendGrid error: ${response.status}`,
-      };
-    }
-
-    // Extract message ID from response headers if available
-    const messageId = response.headers.get('x-message-id');
-
-    return {
-      success: true,
-      messageId: messageId || undefined,
-    };
-  } catch (error) {
-    console.error('Failed to send email:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
-  }
+): Promise<EmailSendResult> {
+  const jobsToSend = jobs.slice(0, 10);
+  const htmlContent = buildDigestHTML(jobsToSend, unsubscribeToken);
+  const textContent = buildDigestText(jobsToSend, unsubscribeToken);
+  return sendEmail({
+    to: email,
+    subject,
+    html: htmlContent,
+    text: textContent,
+  });
 }
 
 /**
@@ -271,6 +223,7 @@ function buildDigestHTML(jobs: FormattedJob[], unsubscribeToken: string): string
         <a href="${baseUrl}">Visit JobBrowser</a> |
         <a href="${unsubscribeUrl}">Unsubscribe from alerts</a>
       </p>
+      <p>Questions go through <a href="${contactFormUrl()}">the contact form</a>. This mailbox does not accept replies.</p>
       <p style="margin-top: 20px; font-size: 11px; color: #9ca3af;">
         © ${new Date().getFullYear()} JobBrowser. All rights reserved.
       </p>
@@ -279,6 +232,30 @@ function buildDigestHTML(jobs: FormattedJob[], unsubscribeToken: string): string
 </body>
 </html>
   `.trim();
+}
+
+function buildDigestText(jobs: FormattedJob[], unsubscribeToken: string): string {
+  const baseUrl = appBaseUrl();
+  const unsubscribeUrl = `${baseUrl}/api/alerts/unsubscribe?token=${encodeURIComponent(unsubscribeToken)}`;
+  const lines = jobs.map((job) => {
+    const salary = formatSalaryRange(job.salary_min, job.salary_max, job.salary_currency);
+    return [
+      job.title,
+      `${job.company_name} — ${job.location}`,
+      salary,
+      `${baseUrl}/jobs/${job.id}`,
+    ]
+      .filter(Boolean)
+      .join('\n');
+  });
+  return [
+    `JobBrowser weekly digest: ${jobs.length} job${jobs.length === 1 ? '' : 's'}.`,
+    ...lines,
+    `Browse jobs: ${baseUrl}`,
+    `Unsubscribe: ${unsubscribeUrl}`,
+    `Questions: ${contactFormUrl()}`,
+    'This mailbox does not accept replies.',
+  ].join('\n\n');
 }
 
 /**
@@ -387,42 +364,30 @@ export async function sendEmail({
   text,
   attachments,
 }: SendEmailOptions): Promise<{ success: boolean; messageId?: string; error?: string }> {
-  if (!process.env.SENDGRID_API_KEY) {
+  const plain = text?.trim() || html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!process.env.RESEND_API_KEY) {
+    console.log(`Email not sent (RESEND_API_KEY unset): ${subject}`);
     return { success: false, error: 'Email service not configured' };
   }
 
   try {
-    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+    const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${process.env.SENDGRID_API_KEY}`,
+        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        personalizations: [
-          {
-            to: [{ email: to }],
-            subject,
-          },
-        ],
-        from: {
-          email: process.env.SENDGRID_FROM_EMAIL || 'noreply@jobbrowser.app',
-          name: 'JobBrowser',
-        },
-        content: [
-          {
-            type: 'text/html',
-            value: html,
-          },
-          ...(text ? [{ type: 'text/plain', value: text }] : []),
-        ],
+        from: emailFrom(),
+        to: [to],
+        subject,
+        html,
+        text: plain,
         ...(attachments?.length
           ? {
               attachments: attachments.map((file) => ({
                 filename: file.filename,
-                type: file.type,
                 content: file.content,
-                disposition: 'attachment',
               })),
             }
           : {}),
@@ -430,21 +395,14 @@ export async function sendEmail({
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('SendGrid error:', response.status, errorText);
-      return {
-        success: false,
-        error: `SendGrid error: ${response.status}`,
-      };
+      console.error('Resend error:', response.status);
+      return { success: false, error: `Resend error: ${response.status}` };
     }
 
-    const messageId = response.headers.get('x-message-id');
-    return {
-      success: true,
-      messageId: messageId || undefined,
-    };
+    const payload = (await response.json().catch(() => ({}))) as { id?: string };
+    return { success: true, messageId: payload.id };
   } catch (error) {
-    console.error('Failed to send email:', error);
+    console.error('Failed to send email:', error instanceof Error ? error.message : 'unknown');
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -490,6 +448,7 @@ export function generateVerificationEmail(
             <p>Or copy and paste this link in your browser:</p>
             <p style="word-break: break-all; font-size: 12px; color: #666;">${verificationLink}</p>
             <div class="footer">
+              <p>Questions: <a href="${contactFormUrl('employer')}">contact form</a>. This mailbox does not accept replies.</p>
               <p>&copy; 2026 JobBrowser. All rights reserved.</p>
             </div>
           </div>
@@ -509,6 +468,9 @@ export function generateVerificationEmail(
     This link will expire in 24 hours.
 
     If you didn't request this email, you can safely ignore it.
+
+    Questions: ${contactFormUrl('employer')}
+    This mailbox does not accept replies.
   `;
 
   return { subject, html, text };
@@ -550,6 +512,7 @@ export function generateJobPostedEmail(
             <p>Job ID: ${jobId}</p>
             <p>Your job will be visible to job seekers across our platform.</p>
             <div class="footer">
+              <p>Questions: <a href="${contactFormUrl('employer')}">contact form</a>. This mailbox does not accept replies.</p>
               <p>&copy; 2026 JobBrowser. All rights reserved.</p>
             </div>
           </div>
@@ -572,6 +535,9 @@ export function generateJobPostedEmail(
     ${process.env.NEXTAUTH_URL}/jobs/${jobId}
 
     Your job will be visible to job seekers across our platform.
+
+    Questions: ${contactFormUrl('employer')}
+    This mailbox does not accept replies.
   `;
 
   return { subject, html, text };
@@ -593,6 +559,8 @@ export function generateApplicationEmail(input: {
     input.coverLetter ? `Note: ${input.coverLetter}` : '',
     `Open the applicant and download the CV: ${input.inboxUrl}`,
     'Sign in with your employer email link if that page asks you to. JobBrowser does not sell applicant CVs.',
+    `Questions: ${contactFormUrl('employer')}`,
+    'This mailbox does not accept replies.',
   ]
     .filter(Boolean)
     .join('\n\n');
@@ -612,6 +580,8 @@ export function generateCandidateConfirmationEmail(input: {
     `Your application for ${input.jobTitle} at ${input.companyName} is with that employer.`,
     `You can check the status here: ${input.statusUrl}`,
     'The CV is available only to that employer and to the JobBrowser operator. It is deleted after 12 months, or sooner if you ask.',
+    `To ask for deletion: ${contactFormUrl('legal-privacy')}`,
+    'This mailbox does not accept replies.',
   ].join('\n\n');
   const html = `<p>${escapeHtml(text).replace(/\n/g, '<br />')}</p><p><a href="${escapeHtml(input.statusUrl)}">Check application status</a></p>`;
   return { subject, html, text };
@@ -630,6 +600,8 @@ export function generateCandidateStatusEmail(input: {
     `Hello ${input.applicantName},`,
     `${input.companyName} marked your application for ${input.jobTitle} as ${label}.`,
     `See the status here: ${input.statusUrl}`,
+    `Questions: ${contactFormUrl('job-seeker')}`,
+    'This mailbox does not accept replies.',
   ].join('\n\n');
   const html = `<p>${escapeHtml(text).replace(/\n/g, '<br />')}</p>`;
   return { subject, html, text };

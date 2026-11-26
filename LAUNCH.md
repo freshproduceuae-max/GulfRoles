@@ -30,17 +30,16 @@ Generate secrets with `openssl rand -base64 32`.
 | `DATABASE_URL_UNPOOLED` | Already set | Direct Neon URL. Migrations prefer this. Do not use it as the runtime URL. |
 | `NEXTAUTH_SECRET` | Yes | A long random string. |
 | `NEXTAUTH_URL` | Yes | `https://jobbrowser.app` after the domain works. Until then, `https://jobbrowser.vercel.app`. |
-| `ADMIN_EMAIL` | Yes | The email you will use at `/admin/login`. |
+| `ADMIN_EMAIL` | Server only | Admin login and optional contact-form notices. Never shown on the site. |
 | `ADMIN_PASSWORD` | Yes | A password you choose. It is not in the source code. |
 | `CRON_SECRET` | Yes | A long random string. Vercel Cron sends it as `Authorization: Bearer …`. |
 | `NEXT_PUBLIC_APP_NAME` | Yes | `JobBrowser` |
 | `NEXT_PUBLIC_APP_BASE_URL` | Yes | `https://jobbrowser.app` (or the vercel.app URL until the domain works). |
 | `NEXT_PUBLIC_API_BASE_URL` | Yes | That same origin plus `/api`. |
-| `NEXT_PUBLIC_CONTACT_EMAIL` | Yes | The inbox you actually read. |
 | `SITE_PUBLIC` | Leave unset | Set to `true` only when the site should be indexed. Until then, `robots.txt` disallows every path and every page sends `noindex`. |
-| `RESUME_STORE` | Leave unset | `neon` stores CVs in Postgres. `blob` plus `BLOB_READ_WRITE_TOKEN` uses a private Vercel Blob store. Downloads stay on JobBrowser either way. |
-| `SENDGRID_API_KEY` | For email | SendGrid API key. Without it, alerts, employer links, and application emails do not send. The site still loads. |
-| `SENDGRID_FROM_EMAIL` | For email | A sender on a domain you verify in SendGrid, such as `noreply@jobbrowser.app`. |
+| `RESUME_STORE` | Leave unset | `neon` stores CVs in Postgres. `blob` plus `BLOB_READ_WRITE_TOKEN` uses a private Vercel Blob store. |
+| `RESEND_API_KEY` | For email | Resend API key. Without it, mail is logged and not sent. The site still loads. |
+| `EMAIL_FROM` | For email | `JobBrowser <noreply@jobbrowser.app>` after that sender is verified in Resend. |
 | `CAREERJET_AFFILIATE_ID` | For Careerjet jobs and clicks | Publisher id from Careerjet. `CAREERJET_API_KEY` is accepted as the same value. |
 | `CAREERJET_USER_IP` | For Careerjet ingestion | The IP Careerjet tells you to send with server-side queries. |
 | `JOOBLE_API_KEY` | For Jooble jobs | Key from the Jooble publisher API. |
@@ -160,15 +159,14 @@ Set Worker secrets with `npx wrangler secret put NAME`. Do not put them in git. 
 | `DATABASE_URL_UNPOOLED` | GitHub secret | Direct Neon URL. Used only by `npm run migrate` in Actions. |
 | `NEXTAUTH_SECRET` | Worker secret | Admin session signing. |
 | `NEXTAUTH_URL` | Worker secret | `https://jobbrowser.jobbrowser.workers.dev` until the domain moves, then `https://jobbrowser.app`. |
-| `ADMIN_EMAIL` | Worker secret | Admin login. |
+| `ADMIN_EMAIL` | Worker secret | Admin login and contact-form notices. Never rendered. |
 | `ADMIN_PASSWORD` | Worker secret | Admin login. |
 | `CRON_SECRET` | Worker secret | Cron routes reject calls without `Authorization: Bearer` this value. The Worker cron sends it. |
 | `NEXT_PUBLIC_APP_NAME` | GitHub Actions variable | `JobBrowser`. Read at build time as `vars.NEXT_PUBLIC_APP_NAME`. |
 | `NEXT_PUBLIC_APP_BASE_URL` | GitHub Actions variable | `https://jobbrowser.jobbrowser.workers.dev` until the custom domain. Read as `vars.NEXT_PUBLIC_APP_BASE_URL`. |
 | `NEXT_PUBLIC_API_BASE_URL` | GitHub Actions variable | `https://jobbrowser.jobbrowser.workers.dev/api` until the custom domain. Read as `vars.NEXT_PUBLIC_API_BASE_URL`. |
-| `NEXT_PUBLIC_CONTACT_EMAIL` | GitHub Actions variable | The inbox you read. Read as `vars.NEXT_PUBLIC_CONTACT_EMAIL`. |
-| `SENDGRID_API_KEY` | Worker secret | Mail. Optional until you send mail. |
-| `SENDGRID_FROM_EMAIL` | Worker var | Verified sender. |
+| `RESEND_API_KEY` | Worker secret | Mail. Optional. Unset means mail is logged and not sent. |
+| `EMAIL_FROM` | Worker var | `JobBrowser <noreply@jobbrowser.app>` after Resend verifies the domain. |
 | `RESUME_STORE` | Worker var | `neon`. Set in `wrangler.jsonc`. CVs stay in Postgres. The `r2` code path is unused until a later plan adds a bucket binding. |
 | `SITE_PUBLIC` | Worker var | Leave unset. `true` is the only value that opens crawlers. |
 | `CAREERJET_AFFILIATE_ID`, `CAREERJET_USER_IP`, `JOOBLE_API_KEY`, `ADZUNA_APP_ID`, `ADZUNA_APP_KEY` | Worker secrets | Same partner keys as Vercel, when you have them. |
@@ -185,17 +183,16 @@ The deploy workflow reads these GitHub Actions variables at build time, because 
 - `NEXT_PUBLIC_APP_NAME`
 - `NEXT_PUBLIC_APP_BASE_URL`
 - `NEXT_PUBLIC_API_BASE_URL`
-- `NEXT_PUBLIC_CONTACT_EMAIL`
 
 It also reads optional variables `NEXT_PUBLIC_ADSENSE_CLIENT`, `NEXT_PUBLIC_ADSENSE_SLOT_HOME`, `NEXT_PUBLIC_ADSENSE_SLOT_SEARCH`, `NEXT_PUBLIC_ADSENSE_SLOT_JOB`, and `NEXT_PUBLIC_SENTRY_DSN`. Leave those unset until you use them. Until the custom domain, set the base URL variables to `https://jobbrowser.jobbrowser.workers.dev` and the API variable to that origin plus `/api`.
 
-GitHub secrets the workflow reads are `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `DATABASE_URL`, and `DATABASE_URL_UNPOOLED`. Other runtime secrets (`CRON_SECRET`, `NEXTAUTH_SECRET`, `ADMIN_PASSWORD`, `SENDGRID_API_KEY`, partner keys) are Worker secrets only.
+GitHub secrets the workflow reads are `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `DATABASE_URL`, and `DATABASE_URL_UNPOOLED`. Other runtime secrets (`CRON_SECRET`, `NEXTAUTH_SECRET`, `ADMIN_PASSWORD`, `ADMIN_EMAIL`, `RESEND_API_KEY`, partner keys) are Worker secrets only. Do not put an owner address in a `NEXT_PUBLIC_` variable.
 
 `CF_WORKER=1` and `RESUME_STORE=neon` are plain vars in `wrangler.jsonc`. The first selects Neon’s HTTP driver for reads. The second keeps CVs in Postgres. Deploy does not create an R2 bucket and does not declare an R2 binding.
 
 ### Cutover
 
-1. In the Cloudflare dashboard, create an API token that can edit Workers scripts for this account. R2 is not enabled and is not required. Put the token and account id in the GitHub repository secrets named above. Also add `DATABASE_URL` and `DATABASE_URL_UNPOOLED`. Add GitHub Actions variables `NEXT_PUBLIC_APP_NAME`, `NEXT_PUBLIC_APP_BASE_URL`, `NEXT_PUBLIC_API_BASE_URL`, and `NEXT_PUBLIC_CONTACT_EMAIL`.
+1. In the Cloudflare dashboard, create an API token that can edit Workers scripts for this account. R2 is not enabled and is not required. Put the token and account id in the GitHub repository secrets named above. Also add `DATABASE_URL` and `DATABASE_URL_UNPOOLED`. Add GitHub Actions variables `NEXT_PUBLIC_APP_NAME`, `NEXT_PUBLIC_APP_BASE_URL`, and `NEXT_PUBLIC_API_BASE_URL`.
 2. Create the Worker by merging this branch, or run `npm run deploy:cf` from your computer after `npx wrangler login`. The GitHub Action on `master` runs tests, then `npm run migrate`, then the Worker deploy. It does not migrate inside the Worker and it does not create storage.
 3. Set the Worker secrets listed above. CVs stay in Postgres because `RESUME_STORE` is `neon`.
 4. Open `https://jobbrowser.jobbrowser.workers.dev`. Confirm `/api/health` says the database is connected, `/` responds, and `/robots.txt` disallows `/` while `SITE_PUBLIC` is unset.

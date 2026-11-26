@@ -30,6 +30,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <Link href="/admin/moderation" className="text-sm text-gray-600 hover:text-gray-900 transition">
                 Moderation
               </Link>
+              <Link href="/admin/messages" className="text-sm text-gray-600 hover:text-gray-900 transition">
+                Messages
+              </Link>
               <Link href="/admin/revenue" className="text-sm text-gray-600 hover:text-gray-900 transition">
                 Clicks
               </Link>

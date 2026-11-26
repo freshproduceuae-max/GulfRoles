@@ -62,7 +62,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const verificationLink = `${appBaseUrl()}/employer/verify/${verificationToken}`;
     const emailContent = generateVerificationEmail(company_name, verificationLink);
 
-    if (!process.env.SENDGRID_API_KEY) {
+    if (!process.env.RESEND_API_KEY) {
       if (process.env.NODE_ENV !== 'production') {
         return NextResponse.json({
           success: true,
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         });
       }
       return NextResponse.json(
-        { error: 'Email is not configured. Set SENDGRID_API_KEY before posting jobs.' },
+        { error: 'Email is not configured yet.' },
         { status: 503 }
       );
     }
