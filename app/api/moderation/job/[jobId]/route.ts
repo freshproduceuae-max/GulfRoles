@@ -9,9 +9,10 @@ import { authOptions } from '@/lib/auth';
  */
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { jobId: string } }
+  { params: paramsPromise }: { params: Promise<{ jobId: string }> }
 ): Promise<NextResponse> {
   try {
+    const params = await paramsPromise;
     // Check authentication
     const session = await getServerSession(authOptions);
     if (!session) {

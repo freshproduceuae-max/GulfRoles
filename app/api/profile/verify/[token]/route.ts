@@ -12,9 +12,10 @@ function sameHostRedirect(request: NextRequest, path: string): NextResponse {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { token: string } }
+  { params: paramsPromise }: { params: Promise<{ token: string }> }
 ): Promise<NextResponse> {
   try {
+    const params = await paramsPromise;
     const profile = await query<{ id: string }>(
       `SELECT id FROM candidate_profiles
        WHERE verification_token = $1 AND verification_token_expires > NOW() AND consent_at IS NOT NULL`,

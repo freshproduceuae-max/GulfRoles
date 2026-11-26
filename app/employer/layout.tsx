@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 };
 
 export default async function EmployerLayout({ children }: { children: ReactNode }) {
-  const pathname = headers().get('x-pathname') || '';
+  const pathname = (await headers()).get('x-pathname') || '';
   const session = await readEmployerSession();
   if (!isPublicEmployerPath(pathname) && !session) {
     redirect('/employer/login');

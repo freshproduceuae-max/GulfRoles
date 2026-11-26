@@ -4,9 +4,10 @@ import { serverErrorResponse } from '@/lib/http';
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { token: string } }
+  { params: paramsPromise }: { params: Promise<{ token: string }> }
 ): Promise<NextResponse> {
   try {
+    const params = await paramsPromise;
     const invite = await queryOne(
       `SELECT i.status, j.title, c.name AS company_name
        FROM candidate_invites i
@@ -24,9 +25,10 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { token: string } }
+  { params: paramsPromise }: { params: Promise<{ token: string }> }
 ): Promise<NextResponse> {
   try {
+    const params = await paramsPromise;
     const body = await request.json();
     const decision = body.decision === 'accepted' ? 'accepted' : body.decision === 'declined' ? 'declined' : '';
     if (!decision) return NextResponse.json({ error: 'Accept or decline the invitation.' }, { status: 400 });

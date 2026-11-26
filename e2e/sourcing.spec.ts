@@ -132,9 +132,14 @@ test('a candidate books an interview slot and receives a calendar invite', async
   await page.getByRole('link', { name: 'Open applicant' }).click();
   await page.getByLabel('Slot start').fill('2026-12-01T09:00');
   await page.getByLabel('Slot end').fill('2026-12-01T09:30');
+  await page.waitForFunction(() => {
+    const button = Array.from(document.querySelectorAll('button')).find((el) => el.textContent?.includes('Propose interview'));
+    return !!button && Object.keys(button).some((key) => key.startsWith('__reactProps'));
+  });
   await page.getByRole('button', { name: 'Propose interview' }).click();
-  const linkText = await page.getByText(/\/interviews\//).innerText();
-  const interviewUrl = linkText.match(/https?:\/\/\S+/)?.[0];
+  const link = page.getByText(/\/interviews\//);
+  await expect(link).toBeVisible();
+  const interviewUrl = (await link.innerText()).match(/https?:\/\/\S+/)?.[0];
   expect(interviewUrl).toBeTruthy();
   await page.goto(interviewUrl as string);
   await page.getByRole('button', { name: 'Pick this time' }).click();

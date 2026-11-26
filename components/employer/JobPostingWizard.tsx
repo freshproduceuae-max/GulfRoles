@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, FormEvent } from 'react';
 
 interface WizardData {
@@ -436,25 +437,25 @@ export default function JobPostingWizard({ employerId: _employerId }: JobPosting
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-4">
-              <a
+              <Link
                 href={`/employer/inbox/${createdJobId}`}
                 className="flex-1 px-6 py-2 bg-primary-500 text-white font-medium rounded-lg text-center"
               >
                 View applicants
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/employer/jobs"
                 className="flex-1 px-6 py-2 border border-gray-300 text-gray-900 font-medium rounded-lg text-center"
               >
                 Your jobs
-              </a>
+              </Link>
               {publishStatus === 'published' ? (
-                <a
+                <Link
                   href={`/jobs/${createdJobId}`}
                   className="flex-1 px-6 py-2 border border-gray-300 text-gray-900 font-medium rounded-lg text-center"
                 >
                   View public job
-                </a>
+                </Link>
               ) : null}
             </div>
           </div>

@@ -1,0 +1,33 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "jobbrowser",
+  "main": "cloudflare/worker.ts",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": [
+    "nodejs_compat",
+    "global_fetch_strictly_public"
+  ],
+  "workers_dev": true,
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "jobbrowser"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "RESUMES",
+      "bucket_name": "jobbrowser-resumes"
+    }
+  ],
+  "vars": {
+    "CF_WORKER": "1"
+  },
+  "triggers": {
+    "crons": ["0 5 * * *", "0 16 * * *"]
+  }
+}

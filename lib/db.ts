@@ -1,4 +1,4 @@
-import { Pool, PoolClient, QueryResult, QueryConfig, QueryResultRow } from 'pg';
+import { Client, Pool, PoolClient, QueryResult, QueryConfig, QueryResultRow } from 'pg';
 
 // Initialize connection pool
 let pool: Pool | null = null;
@@ -49,6 +49,41 @@ export function migrationDatabaseUrl(): string | undefined {
   );
 }
 
+/**
+ * Workers cannot keep a connection pool across requests.
+ * Vercel still uses a small pool. Cloudflare sets CF_WORKER=1.
+ */
+export function usesRequestScopedDb(
+  env: { CF_WORKER?: string; CLOUDFLARE_WORKER?: string } = {
+    CF_WORKER: process.env.CF_WORKER,
+    CLOUDFLARE_WORKER: process.env.CLOUDFLARE_WORKER,
+  }
+): boolean {
+  if (env.CF_WORKER === '1' || env.CLOUDFLARE_WORKER === '1') return true;
+  return typeof navigator !== 'undefined' && navigator.userAgent === 'Cloudflare-Workers';
+}
+
+function databaseUrl(): string {
+  const url = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+  if (!url) throw new Error('DATABASE_URL environment variable is not set');
+  return url;
+}
+
+async function withClient<T>(run: (client: Client) => Promise<T>): Promise<T> {
+  const config = poolConfig(databaseUrl());
+  const client = new Client({
+    connectionString: config.connectionString,
+    ssl: config.ssl,
+    connectionTimeoutMillis: 10000,
+  });
+  await client.connect();
+  try {
+    return await run(client);
+  } finally {
+    await client.end();
+  }
+}
+
 function getPool(): Pool {
   if (!pool) {
     const databaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
@@ -93,6 +128,12 @@ export async function query<T extends QueryResultRow = QueryResultRow>(
   config: QueryConfig | string,
   values?: any[]
 ): Promise<QueryResult<T>> {
+  if (usesRequestScopedDb()) {
+    return withClient((client) =>
+      typeof config === 'string' ? client.query<T>(config, values) : client.query<T>(config)
+    );
+  }
+
   const pool = getPool();
 
   if (typeof config === 'string') {
@@ -126,6 +167,20 @@ export async function queryOne<T extends QueryResultRow = QueryResultRow>(
 export async function transaction<T>(
   callback: (client: PoolClient) => Promise<T>
 ): Promise<T> {
+  if (usesRequestScopedDb()) {
+    return withClient(async (client) => {
+      try {
+        await client.query('BEGIN');
+        const result = await callback(client as unknown as PoolClient);
+        await client.query('COMMIT');
+        return result;
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      }
+    });
+  }
+
   const client = await getClient();
 
   try {

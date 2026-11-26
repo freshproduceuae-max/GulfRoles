@@ -26,7 +26,7 @@ export async function getCandidateSession(request: NextRequest): Promise<Candida
 }
 
 export async function readCandidateSession(): Promise<CandidateSession | null> {
-  const token = cookies().get('candidate_session')?.value;
+  const token = (await cookies()).get('candidate_session')?.value;
   if (!token) return null;
   return load(token);
 }

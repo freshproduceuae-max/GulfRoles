@@ -6,9 +6,10 @@ import { serverErrorResponse } from '@/lib/http';
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { token: string } }
+  { params: paramsPromise }: { params: Promise<{ token: string }> }
 ): Promise<NextResponse> {
   try {
+    const params = await paramsPromise;
     const requestRow = await queryOne<{ id: string; status: string; title: string; company_name: string }>(
       `SELECT r.id, r.status, j.title, c.name AS company_name
        FROM interview_requests r
@@ -31,9 +32,10 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { token: string } }
+  { params: paramsPromise }: { params: Promise<{ token: string }> }
 ): Promise<NextResponse> {
   try {
+    const params = await paramsPromise;
     const body = await request.json();
     const requestRow = await queryOne<{
       id: string;

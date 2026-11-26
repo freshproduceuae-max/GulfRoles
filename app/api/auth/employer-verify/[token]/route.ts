@@ -12,9 +12,10 @@ function sameHostRedirect(request: NextRequest, path: string): NextResponse {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { token: string } }
+  { params: paramsPromise }: { params: Promise<{ token: string }> }
 ): Promise<NextResponse> {
   try {
+    const params = await paramsPromise;
     const { token } = params;
 
     if (!token || typeof token !== 'string') {

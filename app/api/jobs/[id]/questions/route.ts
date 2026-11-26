@@ -5,9 +5,10 @@ import { serverErrorResponse } from '@/lib/http';
 /** Questions a candidate must answer. Knockout thresholds stay on the server. */
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params: paramsPromise }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   try {
+    const params = await paramsPromise;
     const result = await query(
       `SELECT q.id, q.prompt, q.answer_type, q.required
        FROM screening_questions q

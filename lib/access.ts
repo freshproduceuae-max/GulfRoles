@@ -12,7 +12,7 @@ export interface EmployerSession {
 }
 
 export async function readEmployerSession(): Promise<EmployerSession | null> {
-  const token = cookies().get('employer_session')?.value;
+  const token = (await cookies()).get('employer_session')?.value;
   if (!token) return null;
   return loadEmployerSession(token);
 }

@@ -50,6 +50,11 @@ Thumbs.db
 # Turbo
 .turbo/
 
+# OpenNext / Cloudflare
+.open-next/
+.wrangler/
+.dev.vars
+
 # Vercel
 .vercel/
 

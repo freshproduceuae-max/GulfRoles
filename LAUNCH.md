@@ -142,6 +142,69 @@ These stay out of scope, on purpose:
 
 Lighthouse and a formal WCAG audit were not run in this change. Search Console verification, 1,000 live jobs, and 100 alert subscribers cannot be checked until the steps above are done.
 
+## 9. Cloudflare cutover (free plan)
+
+Vercel Hobby cannot show ads. The app can run on Cloudflare Workers with `@opennextjs/cloudflare` while the Vercel project stays up. Do not point `jobbrowser.app` at Cloudflare until the Worker answers.
+
+`tsx` stays a production dependency. `robots.txt` still builds its sitemap from `NEXT_PUBLIC_APP_BASE_URL`. Leave `SITE_PUBLIC` unset until you want the site indexed.
+
+### Secrets and variables
+
+Set Worker secrets with `npx wrangler secret put NAME`. Do not put them in git. GitHub Actions needs repository secrets, not the values in the workflow file.
+
+| Name | Where | Purpose |
+| --- | --- | --- |
+| `CLOUDFLARE_API_TOKEN` | GitHub secret | Deploy token with Workers and R2 edit permission. |
+| `CLOUDFLARE_ACCOUNT_ID` | GitHub secret | The account that owns the Worker. |
+| `DATABASE_URL` | GitHub secret and Worker secret | Pooled Neon URL. The Worker opens one short connection per query. |
+| `DATABASE_URL_UNPOOLED` | GitHub secret | Direct Neon URL. Used only by `npm run migrate` in Actions. |
+| `NEXTAUTH_SECRET` | Worker secret | Admin session signing. |
+| `NEXTAUTH_URL` | Worker secret | `https://jobbrowser.app` after the domain moves. |
+| `ADMIN_EMAIL` | Worker secret | Admin login. |
+| `ADMIN_PASSWORD` | Worker secret | Admin login. |
+| `CRON_SECRET` | Worker secret | Cron routes reject calls without `Authorization: Bearer` this value. The Worker cron sends it. |
+| `NEXT_PUBLIC_APP_BASE_URL` | Worker secret or var | Public origin. Also the sitemap host. |
+| `NEXT_PUBLIC_API_BASE_URL` | Worker secret or var | That origin plus `/api`. |
+| `NEXT_PUBLIC_APP_NAME` | Worker var | `JobBrowser` |
+| `NEXT_PUBLIC_CONTACT_EMAIL` | Worker var | The inbox you read. |
+| `SENDGRID_API_KEY` | Worker secret | Mail. Optional until you send mail. |
+| `SENDGRID_FROM_EMAIL` | Worker var | Verified sender. |
+| `RESUME_STORE` | Worker var | Leave unset or `neon`. Set `r2` after the `jobbrowser-resumes` bucket exists. |
+| `SITE_PUBLIC` | Worker var | Leave unset. `true` is the only value that opens crawlers. |
+| `CAREERJET_AFFILIATE_ID`, `CAREERJET_USER_IP`, `JOOBLE_API_KEY`, `ADZUNA_APP_ID`, `ADZUNA_APP_KEY` | Worker secrets | Same partner keys as Vercel, when you have them. |
+| `LEGAL_FEEDS` | Worker var | `remoteok,remotive`, or `none`. |
+| `NEXT_PUBLIC_ADSENSE_CLIENT` and the three `NEXT_PUBLIC_ADSENSE_SLOT_*` values | GitHub Actions variables and Worker vars | Leave empty until AdSense is approved. |
+| `SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_AUTH_TOKEN` | Worker secret, GitHub variable, GitHub secret | Optional. The build skips source-map upload without a real token. |
+| `ADMIN_PASSWORD_HASH` | Worker secret | Optional instead of `ADMIN_PASSWORD`. |
+| `CAREERJET_API_KEY`, `CAREERJET_AFFILIATE_URL`, `JOOBLE_AFFILIATE_URL`, `ADZUNA_AFFILIATE_URL`, `BLOB_READ_WRITE_TOKEN` | Worker secrets | Optional. Blob is the Vercel store. Leave the token unset on Cloudflare unless `RESUME_STORE=blob`. |
+
+Every other name in `.env.example` can stay unset. `GOOGLE_*`, `GITHUB_*`, `AWS_*`, `SUPABASE_*`, `INDEED_API_KEY`, and `LINKEDIN_API_KEY` are not used. Do not set `SEED_SAMPLE_JOBS` on the public Worker.
+
+`NEXT_PUBLIC_*` values are copied into the browser bundle when the Worker is built. Put them in GitHub Actions variables as well as Worker vars, then redeploy after a change. Runtime-only secrets (`DATABASE_URL`, `CRON_SECRET`, `NEXTAUTH_SECRET`, `ADMIN_PASSWORD`, `SENDGRID_API_KEY`, partner keys) are set on the Worker and are not needed in GitHub except `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `CLOUDFLARE_API_TOKEN`, and `CLOUDFLARE_ACCOUNT_ID`.
+
+`CF_WORKER=1` is already a plain var in `wrangler.jsonc`. It tells the app not to keep a Postgres pool.
+
+### Cutover
+
+1. In the Cloudflare dashboard, create an API token that can edit Workers scripts and R2 for this account. Put the token and account id in the GitHub repository secrets named above. Also add `DATABASE_URL` and `DATABASE_URL_UNPOOLED`.
+2. Create the Worker by merging this branch, or run `npm run deploy:cf` from your computer after `npx wrangler login`. The GitHub Action on `master` runs tests, then `npm run migrate`, then the Worker deploy. It does not migrate inside the Worker.
+3. Create the R2 bucket `jobbrowser-resumes` if the Action did not. Set the Worker secrets listed above. Set `RESUME_STORE` to `neon` first.
+4. Open the `*.workers.dev` URL. Confirm `/api/health` says the database is connected, `/` responds, and `/robots.txt` disallows `/` while `SITE_PUBLIC` is unset.
+5. DNS is at Porkbun. Add the domain `jobbrowser.app` to the Cloudflare account. At Porkbun, change the nameservers to the two Cloudflare nameservers shown for the zone. Wait until Cloudflare says the zone is active.
+6. Attach `jobbrowser.app` and `www.jobbrowser.app` as custom domains on the Worker. Set `NEXTAUTH_URL` and `NEXT_PUBLIC_APP_BASE_URL` to `https://jobbrowser.app`, then redeploy.
+7. Hit `/api/health`, a job page, employer login, and `/robots.txt` on the custom domain.
+8. When that looks right, remove the Vercel project or at least its crons and domain. Until then both hosts can run the daily jobs. Retire Vercel before the next `0 5` or `0 16` UTC cron so ingestion and alert mail do not run twice.
+9. After a day of stable traffic, set `RESUME_STORE=r2` if you want new CVs in R2. Existing CVs stay in Postgres and still download.
+
+### Free plan limits
+
+A dry-run of this Worker reported `Total Upload: 6057 KiB / gzip: 1498 KiB`. That is under the older 3 MB compressed cap and under the current 64 MiB uncompressed cap. Cloudflare Images is not used.
+
+Workers Free allows 10 ms of CPU per request and per cron run. Time spent waiting on Neon does not count. Next.js rendering and the daily ingest can still cross 10 ms and then Cloudflare returns error 1102. If that happens on real traffic, the $5 Workers Paid plan raises the CPU limit. Free also allows 100,000 requests per day and 5 cron triggers on the account. This app uses 2.
+
+Until Vercel is retired, both hosts can run the same crons. Remove the Vercel crons before the next `0 5` or `0 16` UTC run.
+
+
 ## If your laptop has newer files
 
 This branch starts from commit `b16e687` on `master`. Compare your local project to this branch before you overwrite either side. Demo seed data is still in `db/seed.ts` and is not loaded by migrate.

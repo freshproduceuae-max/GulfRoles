@@ -6,6 +6,10 @@
     "dev": "next dev",
     "build": "tsx scripts/migrate.ts && next build",
     "start": "next start",
+    "preview:cf": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy:cf": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "smoke:cf": "node scripts/cf-smoke.mjs",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
@@ -16,7 +20,8 @@
     "seed:production": "NODE_ENV=production tsx db/seed-production.ts"
   },
   "dependencies": {
-    "@sentry/nextjs": "^7.100.0",
+    "@opennextjs/cloudflare": "^1.20.19",
+    "@sentry/nextjs": "^9.47.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/nodemailer": "^8.0.1",
     "@types/pg": "^8.20.0",
@@ -24,7 +29,7 @@
     "bcryptjs": "^3.0.3",
     "date-fns": "^4.4.0",
     "dotenv": "^17.4.2",
-    "next": "^14.2.0",
+    "next": "^15.5.29",
     "next-auth": "^4.24.0",
     "nodemailer": "^7.0.13",
     "pg": "^8.22.0",
@@ -42,10 +47,11 @@
     "@types/react-dom": "^18.3.0",
     "autoprefixer": "^10.4.0",
     "eslint": "^8.56.0",
-    "eslint-config-next": "^14.2.0",
+    "eslint-config-next": "^15.5.29",
     "postcss": "^8.4.0",
     "tailwindcss": "^3.4.0",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "wrangler": "^4.168.0"
   },
   "engines": {
     "node": ">=18.17"
